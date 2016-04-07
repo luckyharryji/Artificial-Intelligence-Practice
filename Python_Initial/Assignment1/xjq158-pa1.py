@@ -10,7 +10,6 @@ assignment. Each problem aresolved with one function/Class.
 
 """
 
-# Problem 1:
 def binarySearch(L, v):
     """Search a value in a list with binary search.
 
@@ -55,23 +54,6 @@ def binarySearch(L, v):
                 cut_time += 1
         return (False, cut_time)
 
-# print "------------------Binary Search Test---------------------------"
-# L = [0,4,6,12,13,25,27]
-# print "binarySearch test case #1: " + str(binarySearch(L,-1) == (False,3))
-# print "binarySearch test case #1: " + str(binarySearch(L,13) == (True,2))
-# print "binarySearch test case #1: " + str(binarySearch(L,25) == (True,1))
-# print "binarySearch test case #2: " + str(binarySearch(L,12) == (True,0))
-# print "binarySearch test case #3: " + str(binarySearch(L,25) == (True,1))
-#
-# L = [0]
-# print "binarySearch test case #1: " + str(binarySearch(L,-1) == (False,1))
-#
-# L = [0, 4, 23, 26]
-# print "binarySearch test case #2: " + str(binarySearch(L,-1) == (False,2))
-# print "------------------Binary Search Test end---------------------------"
-
-
-
 def mean(L):
     """Calculate the mean value of a given list
 
@@ -105,15 +87,6 @@ def mean(L):
         sum_of_list += i
     return float(sum_of_list) / float(length_of_list)
 
-#
-# print "----------mean value test-----------------"
-# x = [5,1,2,3,1]
-# y = [5,1,2,3,1,4]
-# print "mean test case #1: " + str(mean(x) == float(12)/float(5))
-# print "mean test case #2: " + str(mean(y) == float(16)/float(6))
-# print "----------mean value test end---------------"
-
-
 def median(L):
     """Calculate the meadian value of the given list.
 
@@ -145,12 +118,6 @@ def median(L):
         return L[length_of_list / 2]
     else:
         return float(L[length_of_list / 2] + L[length_of_list / 2 - 1]) / float(2)
-# print "-----------median value test-----------------"
-# x = [5,1,2,3,1]
-# y = [5,1,2,3,1,4]
-# print "median test case #1: " + str(median(x) == 2)
-# print "median test case #2: " + str(median(y) == 2.5)
-# print "-----------median value test end-----------------"
 
 def bfs(tree, elem):
     """Breadth first search of a tree structure to find an element.
@@ -190,12 +157,6 @@ def bfs(tree, elem):
         for k in temp_node[1:]:
             node_list.append(k)
     return False
-
-# print "-----------------test of Problem 3:--------------------"
-# myTree = [4, [10, [33], [2]], [3], [14, [12]], [1]]
-# print "bfs test case #1: " + str(bfs(myTree, 1) == True)
-# print "bfs test case #2: " + str(bfs(myTree, 7) == False)
-# print "-----------------end of test of Problem 3:--------------------"
 
 def dfs(tree, elem):
     """Depth first search of a tree structure to find an element.
@@ -252,11 +213,6 @@ def dfs_iterate_tree(tree, elem):
     for sub_tree in tree[1:]:
         if dfs_iterate_tree(sub_tree, elem):
             return True
-# print "-------------Test of DFS---------------"
-# myTree = [4, [10, [33], [2]], [3], [14, [12]], [1]]
-# print "dfs test case #1: " + str(dfs(myTree, 1) == True)
-# print "dfs test case #2: " + str(dfs(myTree, 12) == True)
-# print "-------------end test of DFS---------------"
 
 class TTTBoard():
     """A class for managing a game of Tic Tac Toe.
@@ -377,17 +333,3 @@ class TTTBoard():
         Set all the value of the board to be '*' to clear the board and reset the game.
         """
         self.board = ['*' for i in xrange(9)]
-
-print "\nProblem 4: \n"
-
-myB = TTTBoard()
-print myB
-myB.makeMove("X", 8)
-myB.makeMove("O", 7)
-myB.makeMove("X", 5)
-myB.makeMove("O", 6)
-myB.makeMove("X", 2)
-print myB
-
-print "tic tac toe test case #1: " + str(myB.hasWon("X") == True)
-print "tic tac toe test case #2: " + str(myB.hasWon("O") == False)
