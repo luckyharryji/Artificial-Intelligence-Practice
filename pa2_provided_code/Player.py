@@ -144,7 +144,91 @@ class Player:
         """ Choose a move with alpha beta pruning.  Returns (score, move) """
         print "Alpha Beta Move not yet implemented"
         #returns the score adn the associated moved
-        return (-1,1)
+        move = -1
+        score = -INFINITY
+        turn = self
+        for m in board.legalMoves(self):
+            #for each legal move
+            if ply == 0:
+                #if we're at ply 0, we need to call our eval function & return
+                return (self.score(board), m)
+            if board.gameOver():
+                return (-1, -1)  # Can't make a move, the game is over
+            nb = deepcopy(board)
+            #make a new board
+            nb.makeMove(self, m)
+            #try the move
+            opp = Player(self.opp, self.type, self.ply)
+            s = opp.minValue(nb, ply-1, turn)
+            #and see what the opponent would do next
+            if s > score:
+                #if the result is better than our best score so far, save that move,score
+                move = m
+                score = s
+        #return the best score and move so far
+        return score, move
+        # return (-1,1)
+
+    def maxValue_pruning(self, board, ply, turn, value_range):
+        """ Find the minimax value for the next move for this player
+        at a given board configuation. Returns score."""
+
+        print "get max value"
+
+        if board.gameOver():
+            return turn.score(board)
+        score = -INFINITY
+        for m in board.legalMoves(self):
+            if ply == 0:
+                #print "turn.score(board) in max value is: " + str(turn.score(board))
+                return turn.score(board)
+            # make a new player to play the other side
+            opponent = Player(self.opp, self.type, self.ply)
+            # Copy the board so that we don't ruin it
+            nextBoard = deepcopy(board)
+            nextBoard.makeMove(self, m)
+
+            value_of_self = [-INFINITY, INFINITY]
+
+            s = opponent.minValue(nextBoard, ply-1, turn, value_of_self)
+            #print "s in maxValue is: " + str(s)
+            if s > score:
+                score = s
+            if s < value_of_self[1]:
+                value_of_self[1] = s
+            if value_of_self[1] < value_range[0]:
+                return score
+        return score
+
+    def minValue_pruning(self, board, ply, turn, value_range):
+        """ Find the minimax value for the next move for this player
+            at a given board configuation. Returns score."""
+        print "get min value"
+
+        if board.gameOver():
+            return turn.score(board)
+        score = INFINITY
+        for m in board.legalMoves(self):
+            if ply == 0:
+                #print "turn.score(board) in min Value is: " + str(turn.score(board))
+                return turn.score(board)
+            # make a new player to play the other side
+            opponent = Player(self.opp, self.type, self.ply)
+            # Copy the board so that we don't ruin it
+            nextBoard = deepcopy(board)
+            nextBoard.makeMove(self, m)
+
+            value_of_self = [-INFINITY, INFINITY]
+
+            s = opponent.maxValue(nextBoard, ply-1, turn, value_of_self)
+            #print "s in minValue is: " + str(s)
+            if s < score:
+                score = s
+            if s < value_of_self[1]:
+                value_range[1] = s
+            if value_of_self[1] < value_range[0]:
+                return score
+        return score
 
     def chooseMove(self, board):
         """ Returns the next move that this player wants to make """
