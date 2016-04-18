@@ -13,13 +13,14 @@ class MancalaBoard:
     def __init__(self):
         """ Initilize a game board for the game of mancala"""
         self.reset()
-        
+
     def reset(self):
         """ Reselt the mancala board for a new game"""
         self.NCUPS = 6       # Cups per side
         self.scoreCups = [0, 0]
         self.P1Cups = [4]*self.NCUPS
         self.P2Cups = [4]*self.NCUPS
+        print "initial a mancala board"
 
     def __repr__(self):
         ret = "P L A Y E R  2\n"
@@ -34,9 +35,9 @@ class MancalaBoard:
         ret += str(self.scoreCups[0])
         ret += "\n------------------------------------------------------------"
         ret += "\n\t1\t2\t3\t4\t5\t6\n"
-        ret += "P L A Y E R  1\n"        
+        ret += "P L A Y E R  1\n"
         return ret
-        
+
     def legalMove( self, player, cup ):
         """ Returns whether or not a given move is legal or not"""
         if player.num == 1:
@@ -55,7 +56,9 @@ class MancalaBoard:
         for m in range(len(cups)):
             if cups[m] != 0:
                 moves += [m+1]
+        print "legel moves: not enpty spot pits"
         return moves
+
 
 
     def makeMove( self, player, cup ):
@@ -71,7 +74,7 @@ class MancalaBoard:
             return False
         else:
             return again
-            
+
     def makeMoveHelp( self, player, cup ):
         """ Make a move for the given player.
             Returns True if the player gets another turn and False if not.
@@ -88,7 +91,7 @@ class MancalaBoard:
         cup += 1
         playAgain = False # bug fix - add this line
         while nstones > 0:
-            playAgain = False    
+            playAgain = False
             while cup <= len(cups) and nstones > 0:
                 cups[cup-1] += 1
                 nstones = nstones - 1
@@ -109,7 +112,7 @@ class MancalaBoard:
         # play is over but we get to go again
         if playAgain:
             return True
-        
+
         # Now see if we ended in a blank space on our side
         if cups == initCups and cups[cup-2] == 1:
             self.scoreCups[player.num-1] += oppCups[(self.NCUPS-cup)+1]
@@ -134,7 +137,7 @@ class MancalaBoard:
             return self.P1Cups
         else:
             return self.P2Cups
-        
+
     def gameOver(self):
         """ Is the game over?"""
         over = True
@@ -147,12 +150,13 @@ class MancalaBoard:
         for elem in self.P2Cups:
             if elem != 0:
                 over = False
-        return over   
+        print "decide if game over: empty in each pits spots"
+        return over
 
     def hostGame(self, player1, player2):
         """ Host a game between two players """
         self.reset()
-        currPlayer = player1 
+        currPlayer = player1
         waitPlayer = player2
         while not(self.gameOver()):
             again = True

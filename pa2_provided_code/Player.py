@@ -24,7 +24,7 @@ class Player:
     MINIMAX = 2
     ABPRUNE = 3
     CUSTOM = 4
-    
+
     def __init__(self, playerNum, playerType, ply=0):
         """Initialize a Player with a playerNum (1 or 2), playerType (one of
         the constants such as HUMAN), and a ply (default is 0)."""
@@ -36,9 +36,11 @@ class Player:
     def __repr__(self):
         """Returns a string representation of the Player."""
         return str(self.num)
-        
+
     def minimaxMove(self, board, ply):
         """ Choose the best minimax move.  Returns (score, move) """
+        print "mini max moving"
+
         move = -1
         score = -INFINITY
         turn = self
@@ -66,6 +68,9 @@ class Player:
     def maxValue(self, board, ply, turn):
         """ Find the minimax value for the next move for this player
         at a given board configuation. Returns score."""
+
+        print "get max value"
+
         if board.gameOver():
             return turn.score(board)
         score = -INFINITY
@@ -83,10 +88,12 @@ class Player:
             if s > score:
                 score = s
         return score
-    
+
     def minValue(self, board, ply, turn):
         """ Find the minimax value for the next move for this player
             at a given board configuation. Returns score."""
+        print "get min value"
+
         if board.gameOver():
             return turn.score(board)
         score = INFINITY
@@ -111,11 +118,15 @@ class Player:
     # to improve on this function.
     def score(self, board):
         """ Returns the score for this player given the state of the board """
+        print "get score"
         if board.hasWon(self.num):
+            return self.num, "  Won"
             return 100.0
         elif board.hasWon(self.opp):
+            return self.opp, "  Won"
             return 0.0
         else:
+            print "tie game"
             return 50.0
 
     # You should not modify anything before this point.
@@ -134,9 +145,11 @@ class Player:
         print "Alpha Beta Move not yet implemented"
         #returns the score adn the associated moved
         return (-1,1)
-                
+
     def chooseMove(self, board):
         """ Returns the next move that this player wants to make """
+        print "choose move"
+
         if self.type == self.HUMAN:
             move = input("Please enter your move:")
             while not board.legalMove(self, move):
@@ -148,8 +161,11 @@ class Player:
             print "chose move", move
             return move
         elif self.type == self.MINIMAX:
+            print "call mini max start:  "
+            print "ply is : ", self.ply
             val, move = self.minimaxMove(board, self.ply)
             print "chose move", move, " with value", val
+            print "one return here"
             return move
         elif self.type == self.ABPRUNE:
             val, move = self.alphaBetaMove(board, self.ply)
@@ -180,4 +196,3 @@ class MancalaPlayer(Player):
         # for evaluating the board
         print "Calling score in MancalaPlayer"
         return Player.score(self, board)
-        

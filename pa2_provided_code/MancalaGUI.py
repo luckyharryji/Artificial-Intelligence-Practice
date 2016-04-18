@@ -19,32 +19,36 @@ class MancalaWindow:
         self.turn = p1
         self.wait = p2
         self.root = master
-        
+
         frame = Frame(master)
         frame.pack()
 
         # Create the board
         self.makeBoard( frame )
-        
+
         displayStr = "Welcome to Mancala"
-            
+
         self.status = Label(frame, text=displayStr)
         self.status.pack(side=BOTTOM)
-        
+        print "board initial"
+
     def enableBoard(self):
         """ Allow a human player to make moves by clicking"""
+        print "enable board"
         for i in [0, 1]:
             for j in range(self.game.NCUPS):
                 self.cups[i][j].bind("<Button-1>", self.callback)
 
     def disableBoard(self):
         """ Prevent the human player from clicking while the computer thinks"""
+        print "disable board"
         for i in [0, 1]:
             for j in range(self.game.NCUPS):
                 self.cups[i][j].unbind("<Button-1>")
 
     def makeBoard( self, frame ):
         """ Create the board """
+        print "make board"
         boardFrame = Frame(frame)
         boardFrame.pack(side=TOP)
 
@@ -83,18 +87,20 @@ class MancalaWindow:
 
     def drawBoard( self ):
         """ Draw the board on the canvas """
+        print "draw board"
         self.p2cup.create_oval(self.PAD, self.PAD, self.CUPW, 0.9*self.HEIGHT, width=2 )
         binW = self.BOARDW/self.game.NCUPS
         binH = self.HEIGHT/2
         for j in [0, 1]:
             for i in range(self.game.NCUPS):
-                
+
                 self.cups[j][i].create_rectangle(self.PAD, self.PAD, binW, binH)
         self.p1cup.create_oval(self.PAD, self.PAD+0.1*self.HEIGHT, self.CUPW, self.HEIGHT, width=2 )
-        
+
 
     def newgame(self):
         """ Start a new game between the players """
+        print "start a new game"
         self.game.reset()
         self.turn = self.p1
         self.wait = self.p2
@@ -110,6 +116,7 @@ class MancalaWindow:
         """ Find out what to do next.  If the game is over, report who
             won.  If it's a human player's turn, enable the board for
             a click.  If it's a computer player's turn, choose the next move."""
+        print "continue game"
         self.root.update()
         if self.game.gameOver():
             if self.game.hasWon(self.p1.num):
@@ -131,6 +138,7 @@ class MancalaWindow:
 
     def swapTurns( self ):
         """ Change whose turn it is"""
+        print "swap turens"
         temp = self.turn
         self.turn = self.wait
         self.wait = temp
@@ -138,11 +146,12 @@ class MancalaWindow:
         if self.turn.type != Player.HUMAN:
             statusstr += "Please wait..."
         self.status['text'] = statusstr
-        
-        
+
+
     def resetStones(self):
         """ Clear the stones and redraw them """
         # Put the stones in the cups
+        print "reset stones"
         for i in range(len(self.game.P2Cups)):
             index = (len(self.game.P2Cups)-i)-1
             self.clearCup(self.cups[1][index])
@@ -156,19 +165,21 @@ class MancalaWindow:
         self.clearCup(self.p2cup)
         self.p2cup.create_text(self.CUPW/2, 10, text=str(self.game.scoreCups[1]), tag="num")
         self.p1cup.create_text(self.CUPW/2, 10+0.1*self.HEIGHT, text=str(self.game.scoreCups[0]), tag="num")
-        
-    
+
+
     def clearCup( self, cup ):
         """ Clear the stones in the given cup"""
+        print "clear cups"
         titems = cup.find_withtag("num")
         stones = cup.find_withtag("stone")
         cup.delete(titems)
         cup.delete(stones)
-            
+
 
     def callback(self, event):
         """ Handle the human player's move"""
         # calculate which box the click was in
+        print "calling callback"
         moveAgain = True
         self.disableBoard()
         if self.turn.num == 1:
@@ -192,7 +203,7 @@ class MancalaWindow:
             self.enableBoard()
         else:
             self.continueGame()
-        
+
 
 def startGame(p1, p2):
     """ Start the game of Mancala with two players """
