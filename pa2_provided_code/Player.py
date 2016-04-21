@@ -9,6 +9,11 @@
 # a subclass of the Player class.
 
 
+# 1. mancala的个数
+# 2. my sides number
+# 3. weight from left to right
+# 4. one more
+
 from random import *
 from decimal import *
 from copy import *
@@ -297,15 +302,20 @@ class MancalaPlayer(Player):
         # Currently this function just calls Player's score
         # function.  You should replace the line below with your own code
         # for evaluating the board
-        cups = board.getPlayersCups(self.num)
+        my_score = scoreHelper(board, self.num)
+        op_score = scoreHelper(board, self.opp)
+        return my_score - op_score
+
+    def scoreHelper(self, board, player_num):
+        cups = board.getPlayersCups(player_num)
         w = [6,5,4,3,2,1]
-        s = board.scoreCups[self.num - 1] * 20
+        s = board.scoreCups[player_num - 1] * 20
         sum = 0
         for i in xrange(6):
+            if cup[i] = i + 1:
+                return INFINITY
             sum += cup[i]
             if cups[i] == 0:
                 s += i * 2
             s += cups[i] * w[i]
         return s
-
-    def scoreHelper(self, board):
