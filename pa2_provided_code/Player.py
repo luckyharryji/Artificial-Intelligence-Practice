@@ -144,7 +144,109 @@ class Player:
         """ Choose a move with alpha beta pruning.  Returns (score, move) """
         print "Alpha Beta Move not yet implemented"
         #returns the score adn the associated moved
-        return (-1,1)
+        cups = board.getPlayersCups(self.num)
+        for i in range(0,6):
+            print cups[i]
+        move = -1
+        score = [-INFINITY, INFINITY]
+        turn = self
+        firstChild = True
+        for m in board.legalMoves(self):
+            print m
+            #for each legal move
+            if ply == 0:
+                #if we're at ply 0, we need to call our eval function & return
+                return (self.score(board), m)
+            if board.gameOver():
+                return (-1, -1)  # Can't make a move, the game is over
+            nb = deepcopy(board)
+            #make a new board
+            nb.makeMove(self, m)
+            #try the move
+            opp = Player(self.opp, self.type, self.ply)
+            s = opp.minValueOfAlpahBeta(nb, ply-1, turn, score, firstChild)
+            #and see what the opponent would do next
+            if s >= score[0]:
+                #if the result is better than our best score so far, save that move,score
+                move = m
+                score[0] = s
+            firstChild = False
+        #return the best score and move so far
+        return score[0], move
+
+    def maxValueOfAlpahBeta(self, board, ply, turn, score, firstChild):
+        """ Find the minimax value for the next move for this player
+        at a given board configuation. Returns score."""
+
+        print "get max value"
+        current_firstChild = True
+        if board.gameOver():
+            return turn.score(board)
+        current_score = [-INFINITY, INFINITY]
+        for m in board.legalMoves(self):
+            if ply == 0:
+                #print "turn.score(board) in min Value is: " + str(turn.score(board))
+                return turn.score(board)
+            # make a new player to play the other side
+            opponent = Player(self.opp, self.type, self.ply)
+            # Copy the board so that we don't ruin it
+            nextBoard = deepcopy(board)
+            nextBoard.makeMove(self, m)
+            s = opponent.minValueOfAlpahBeta(nextBoard, ply-1, turn, current_score, current_firstChild)
+            #print "s in minValue is: " + str(s)
+            if not firstChild:
+                if s > score[1]:
+                    return s
+                else:
+                    if s > current_score[0]:
+                        current_score[0] = s
+                    if s > score[0]:
+                        score[0] = s
+            else:
+                if score[1] == INFINITY:
+                    score[1] = s
+                if s < current_score[0]:
+                    current_score[0] = s
+                    score[1] = s
+            current_firstChild = False
+        return current_score[0]
+
+    def minValueOfAlpahBeta(self, board, ply, turn, score, firstChild):
+        """ Find the minimax value for the next move for this player
+            at a given board configuation. Returns score."""
+        print "get min value"
+
+        if board.gameOver():
+            return turn.score(board)
+        current_score = [-INFINITY, INFINITY]
+        current_firstChild = True
+        for m in board.legalMoves(self):
+            if ply == 0:
+                #print "turn.score(board) in min Value is: " + str(turn.score(board))
+                return turn.score(board)
+            # make a new player to play the other side
+            opponent = Player(self.opp, self.type, self.ply)
+            # Copy the board so that we don't ruin it
+            nextBoard = deepcopy(board)
+            nextBoard.makeMove(self, m)
+            s = opponent.maxValueOfAlpahBeta(nextBoard, ply-1, turn, current_score, current_firstChild)
+            #print "s in minValue is: " + str(s)
+            if not firstChild:
+                if s < score[0]:
+                    return s
+                else:
+                    if s < current_score[1]:
+                        current_score[1] = s
+                    if s < score[1]:
+                        score[1] = s
+            else:
+                if score[0] == -INFINITY:
+                    score[0] = s
+                if s < current_score[1]:
+                    current_score[1] = s
+                    score[0] = s
+            current_firstChild = False
+        return current_score[1]
 
     def chooseMove(self, board):
         """ Returns the next move that this player wants to make """
@@ -170,6 +272,7 @@ class Player:
         elif self.type == self.ABPRUNE:
             val, move = self.alphaBetaMove(board, self.ply)
             print "chose move", move, " with value", val
+            print "======================move by ABPRUNE==============================="
             return move
         elif self.type == self.CUSTOM:
             # TODO: Implement a custom player
@@ -194,5 +297,15 @@ class MancalaPlayer(Player):
         # Currently this function just calls Player's score
         # function.  You should replace the line below with your own code
         # for evaluating the board
-        print "Calling score in MancalaPlayer"
-        return Player.score(self, board)
+        cups = board.getPlayersCups(self.num)
+        w = [6,5,4,3,2,1]
+        s = board.scoreCups[self.num - 1] * 20
+        sum = 0
+        for i in xrange(6):
+            sum += cup[i]
+            if cups[i] == 0:
+                s += i * 2
+            s += cups[i] * w[i]
+        return s
+
+    def scoreHelper(self, board):
