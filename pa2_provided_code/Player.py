@@ -203,6 +203,87 @@ class Player:
         return score
 
 
+
+    def customMove(self, board, ply):
+        """ Choose a move with alpha beta pruning.  Returns (score, move) """
+        move = -1
+        score = -INFINITY
+        turn = self
+        cups = board.getPlayersCups(self.num)
+
+        for i in xrange(len(cups)):
+            if cups[i] == i + 1:
+                return 100, i
+
+
+        if ply == 0:
+            #if we're at ply 0, we need to call our eval function & return
+            return (self.score(board), m)
+        if board.gameOver():
+            return (-1, -1)  # Can't make a move, the game is over
+        # value_range = [-INFINITY, INFINITY]
+        alpha = -INFINITY
+        beta = INFINITY
+        for m in board.legalMoves(self):
+            nb = deepcopy(board)
+            #make a new board
+            nb.makeMove(self, m)
+            #try the move
+            opp = MancalaPlayer(self.opp, self.type, self.ply)
+            s = opp.minValue_pruning(nb, ply-1, turn, alpha, beta)
+            #and see what the opponent would do next
+            if s > score:
+                #if the result is better than our best score so far, save that move,score
+                move = m
+                score = s
+            alpha = max(alpha, score)
+            if beta <= alpha:
+                break
+        #return the best score and move so far
+        return score, move
+        # return (-1,1)
+
+
+    def maxValue_custom(self, board, ply, turn, alpha, beta):
+        """ Find the minimax value for the next move for this player
+        at a given board configuation. Returns score."""
+        if board.gameOver() or ply == 0:
+            return turn.score(board)
+        score = -INFINITY
+        for m in board.legalMoves(self):
+            opponent = MancalaPlayer(self.opp, self.type, self.ply)
+            # Copy the board so that we don't ruin it
+            nextBoard = deepcopy(board)
+            nextBoard.makeMove(self, m)
+            s = opponent.minValue_pruning(nextBoard, ply-1, turn, alpha, beta)
+            #print "s in maxValue is: " + str(s)
+            score = max(score, s)
+            alpha = max(alpha, score)
+            if beta <= alpha:
+                break
+        return score
+
+
+    def minValue_custom(self, board, ply, turn, alpha, beta):
+        """ Find the minimax value for the next move for this player
+            at a given board configuation. Returns score."""
+        if board.gameOver() or ply == 0:
+            return turn.score(board)
+        score = INFINITY
+        for m in board.legalMoves(self):
+            opponent = MancalaPlayer(self.opp, self.type, self.ply)
+            # Copy the board so that we don't ruin it
+            nextBoard = deepcopy(board)
+            nextBoard.makeMove(self, m)
+            s = opponent.maxValue_pruning(nextBoard, ply-1, turn, alpha, beta)
+            #print "s in minValue is: " + str(s)
+            score = min(score, s)
+            beta = min(beta, score)
+            if beta <= alpha:
+                break
+        return score
+
+
     def chooseMove(self, board):
         """ Returns the next move that this player wants to make """
         if self.type == self.HUMAN:
@@ -222,11 +303,11 @@ class Player:
         elif self.type == self.ABPRUNE:
             val, move = self.alphaBetaMove(board, self.ply)
             print "chose move", move, " with value", val
-            val2, move2 = self.minimaxMove(board, self.ply)
-            print "==========Minigmax=========="
-            print val2, move2
-            print "===========Pruning============"
-            print val, move
+            # val2, move2 = self.minimaxMove(board, self.ply)
+            # print "==========Minigmax=========="
+            # print val2, move2
+            # print "===========Pruning============"
+            # print val, move
             return move
         elif self.type == self.CUSTOM:
             # TODO: Implement a custom player
@@ -234,11 +315,12 @@ class Player:
             # function.  You may use whatever search algorithm and scoring
             # algorithm you like.  Remember that your player must make
             # each move in about 10 seconds or less.
-            print "Custom player not yet implemented"
-            return -1
+            val, move = self.customMove(board, self.ply)
+            return move
         else:
             print "Unknown player type"
             return -1
+
 
 
 # Note, you should change the name of this player to be your netid
