@@ -9,11 +9,6 @@
 # a subclass of the Player class.
 
 
-# 1. mancala的个数
-# 2. my sides number
-# 3. weight from left to right
-# 4. one more
-
 from random import *
 from decimal import *
 from copy import *
@@ -44,8 +39,6 @@ class Player:
 
     def minimaxMove(self, board, ply):
         """ Choose the best minimax move.  Returns (score, move) """
-        print "mini max moving"
-
         move = -1
         score = -INFINITY
         turn = self
@@ -73,9 +66,6 @@ class Player:
     def maxValue(self, board, ply, turn):
         """ Find the minimax value for the next move for this player
         at a given board configuation. Returns score."""
-
-        print "get max value"
-
         if board.gameOver():
             return turn.score(board)
         score = -INFINITY
@@ -97,8 +87,6 @@ class Player:
     def minValue(self, board, ply, turn):
         """ Find the minimax value for the next move for this player
             at a given board configuation. Returns score."""
-        print "get min value"
-
         if board.gameOver():
             return turn.score(board)
         score = INFINITY
@@ -123,15 +111,11 @@ class Player:
     # to improve on this function.
     def score(self, board):
         """ Returns the score for this player given the state of the board """
-        print "get score"
         if board.hasWon(self.num):
-            return self.num, "  Won"
             return 100.0
         elif board.hasWon(self.opp):
-            return self.opp, "  Won"
             return 0.0
         else:
-            print "tie game"
             return 50.0
 
     # You should not modify anything before this point.
@@ -147,116 +131,80 @@ class Player:
     # and/or a different move search order.
     def alphaBetaMove(self, board, ply):
         """ Choose a move with alpha beta pruning.  Returns (score, move) """
-        print "Alpha Beta Move not yet implemented"
-        #returns the score adn the associated moved
-        cups = board.getPlayersCups(self.num)
-        for i in range(0,6):
-            print cups[i]
         move = -1
-        score = [-INFINITY, INFINITY]
+        score = -INFINITY
         turn = self
-        firstChild = True
+
+        if ply == 0:
+            #if we're at ply 0, we need to call our eval function & return
+            return (self.score(board), m)
+        if board.gameOver():
+            return (-1, -1)  # Can't make a move, the game is over
+        # value_range = [-INFINITY, INFINITY]
+        alpha = -INFINITY
+        beta = INFINITY
         for m in board.legalMoves(self):
-            print m
-            #for each legal move
-            if ply == 0:
-                #if we're at ply 0, we need to call our eval function & return
-                return (self.score(board), m)
-            if board.gameOver():
-                return (-1, -1)  # Can't make a move, the game is over
             nb = deepcopy(board)
             #make a new board
             nb.makeMove(self, m)
             #try the move
-            opp = Player(self.opp, self.type, self.ply)
-            s = opp.minValueOfAlpahBeta(nb, ply-1, turn, score, firstChild)
+            opp = MancalaPlayer(self.opp, self.type, self.ply)
+            s = opp.minValue_pruning(nb, ply-1, turn, alpha, beta)
             #and see what the opponent would do next
-            if s >= score[0]:
+            if s > score:
                 #if the result is better than our best score so far, save that move,score
                 move = m
-                score[0] = s
-            firstChild = False
+                score = s
+            alpha = max(alpha, score)
+            if beta <= alpha:
+                break
         #return the best score and move so far
-        return score[0], move
+        return score, move
+        # return (-1,1)
 
-    def maxValueOfAlpahBeta(self, board, ply, turn, score, firstChild):
+
+    def maxValue_pruning(self, board, ply, turn, alpha, beta):
         """ Find the minimax value for the next move for this player
         at a given board configuation. Returns score."""
-
-        print "get max value"
-        current_firstChild = True
-        if board.gameOver():
+        if board.gameOver() or ply == 0:
             return turn.score(board)
-        current_score = [-INFINITY, INFINITY]
+        score = -INFINITY
         for m in board.legalMoves(self):
-            if ply == 0:
-                #print "turn.score(board) in min Value is: " + str(turn.score(board))
-                return turn.score(board)
-            # make a new player to play the other side
-            opponent = Player(self.opp, self.type, self.ply)
+            opponent = MancalaPlayer(self.opp, self.type, self.ply)
             # Copy the board so that we don't ruin it
             nextBoard = deepcopy(board)
             nextBoard.makeMove(self, m)
-            s = opponent.minValueOfAlpahBeta(nextBoard, ply-1, turn, current_score, current_firstChild)
-            #print "s in minValue is: " + str(s)
-            if not firstChild:
-                if s > score[1]:
-                    return s
-                else:
-                    if s > current_score[0]:
-                        current_score[0] = s
-                    if s > score[0]:
-                        score[0] = s
-            else:
-                if score[1] == INFINITY:
-                    score[1] = s
-                if s < current_score[0]:
-                    current_score[0] = s
-                    score[1] = s
-            current_firstChild = False
-        return current_score[0]
+            s = opponent.minValue_pruning(nextBoard, ply-1, turn, alpha, beta)
+            #print "s in maxValue is: " + str(s)
+            score = max(score, s)
+            alpha = max(alpha, score)
+            if beta <= alpha:
+                break
+        return score
 
-    def minValueOfAlpahBeta(self, board, ply, turn, score, firstChild):
+
+    def minValue_pruning(self, board, ply, turn, alpha, beta):
         """ Find the minimax value for the next move for this player
             at a given board configuation. Returns score."""
-        print "get min value"
-
-        if board.gameOver():
+        if board.gameOver() or ply == 0:
             return turn.score(board)
-        current_score = [-INFINITY, INFINITY]
-        current_firstChild = True
+        score = INFINITY
         for m in board.legalMoves(self):
-            if ply == 0:
-                #print "turn.score(board) in min Value is: " + str(turn.score(board))
-                return turn.score(board)
-            # make a new player to play the other side
-            opponent = Player(self.opp, self.type, self.ply)
+            opponent = MancalaPlayer(self.opp, self.type, self.ply)
             # Copy the board so that we don't ruin it
             nextBoard = deepcopy(board)
             nextBoard.makeMove(self, m)
-            s = opponent.maxValueOfAlpahBeta(nextBoard, ply-1, turn, current_score, current_firstChild)
+            s = opponent.maxValue_pruning(nextBoard, ply-1, turn, alpha, beta)
             #print "s in minValue is: " + str(s)
-            if not firstChild:
-                if s < score[0]:
-                    return s
-                else:
-                    if s < current_score[1]:
-                        current_score[1] = s
-                    if s < score[1]:
-                        score[1] = s
-            else:
-                if score[0] == -INFINITY:
-                    score[0] = s
-                if s < current_score[1]:
-                    current_score[1] = s
-                    score[0] = s
-            current_firstChild = False
-        return current_score[1]
+            score = min(score, s)
+            beta = min(beta, score)
+            if beta <= alpha:
+                break
+        return score
+
 
     def chooseMove(self, board):
         """ Returns the next move that this player wants to make """
-        print "choose move"
-
         if self.type == self.HUMAN:
             move = input("Please enter your move:")
             while not board.legalMove(self, move):
@@ -268,16 +216,17 @@ class Player:
             print "chose move", move
             return move
         elif self.type == self.MINIMAX:
-            print "call mini max start:  "
-            print "ply is : ", self.ply
             val, move = self.minimaxMove(board, self.ply)
             print "chose move", move, " with value", val
-            print "one return here"
             return move
         elif self.type == self.ABPRUNE:
             val, move = self.alphaBetaMove(board, self.ply)
             print "chose move", move, " with value", val
-            print "======================move by ABPRUNE==============================="
+            val2, move2 = self.minimaxMove(board, self.ply)
+            print "==========Minigmax=========="
+            print val2, move2
+            print "===========Pruning============"
+            print val, move
             return move
         elif self.type == self.CUSTOM:
             # TODO: Implement a custom player
@@ -302,20 +251,11 @@ class MancalaPlayer(Player):
         # Currently this function just calls Player's score
         # function.  You should replace the line below with your own code
         # for evaluating the board
-        my_score = scoreHelper(board, self.num)
-        op_score = scoreHelper(board, self.opp)
-        return my_score - op_score
-
-    def scoreHelper(self, board, player_num):
-        cups = board.getPlayersCups(player_num)
-        w = [6,5,4,3,2,1]
-        s = board.scoreCups[player_num - 1] * 20
-        sum = 0
-        for i in xrange(6):
-            if cup[i] = i + 1:
-                return INFINITY
-            sum += cup[i]
-            if cups[i] == 0:
-                s += i * 2
-            s += cups[i] * w[i]
-        return s
+        #print "Calling score in MancalaPlayer"
+        # return Player.score(self, board)
+        if board.hasWon(self.num):
+            return 100.0
+        elif board.hasWon(self.opp):
+            return 0.0
+        else:
+            return board.scoreCups[self.num - 1]/float(48)

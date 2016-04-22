@@ -20,7 +20,6 @@ class MancalaBoard:
         self.scoreCups = [0, 0]
         self.P1Cups = [4]*self.NCUPS
         self.P2Cups = [4]*self.NCUPS
-        print "initial a mancala board"
 
     def __repr__(self):
         ret = "P L A Y E R  2\n"
@@ -56,9 +55,7 @@ class MancalaBoard:
         for m in range(len(cups)):
             if cups[m] != 0:
                 moves += [m+1]
-        print "legel moves: not enpty spot pits"
         return moves
-
 
 
     def makeMove( self, player, cup ):
@@ -150,7 +147,6 @@ class MancalaBoard:
         for elem in self.P2Cups:
             if elem != 0:
                 over = False
-        print "decide if game over: empty in each pits spots"
         return over
 
     def hostGame(self, player1, player2):
