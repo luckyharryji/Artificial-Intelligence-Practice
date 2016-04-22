@@ -222,11 +222,13 @@ class Player:
         elif self.type == self.ABPRUNE:
             val, move = self.alphaBetaMove(board, self.ply)
             print "chose move", move, " with value", val
-            val2, move2 = self.minimaxMove(board, self.ply)
-            print "==========Minigmax=========="
-            print val2, move2
-            print "===========Pruning============"
-            print val, move
+            print board.P1Cups
+            print board.P2Cups
+            # val2, move2 = self.minimaxMove(board, self.ply)
+            # print "==========Minigmax=========="
+            # print val2, move2
+            # print "===========Pruning============"
+            # print val, move
             return move
         elif self.type == self.CUSTOM:
             # TODO: Implement a custom player
@@ -253,9 +255,28 @@ class MancalaPlayer(Player):
         # for evaluating the board
         #print "Calling score in MancalaPlayer"
         # return Player.score(self, board)
-        if board.hasWon(self.num):
-            return 100.0
-        elif board.hasWon(self.opp):
-            return 0.0
+        # if board.hasWon(self.num):
+        #     return 100.0
+        # elif board.hasWon(self.opp):
+        #     return 0.0
+        # else:
+        return self.score_calculate(board)
+            # return board.scoreCups[self.num - 1]/float(48)
+
+    def score_calculate(self, board):
+        if self.num == 1:
+            score_variant = board.scoreCups[0] - board.scoreCups[1]
+            stone_variant = sum(board.P1Cups) - sum(board.P2Cups)
+            overflow = 0
+            for i in xrange(board.NCUPS):
+                overflow -= max(0, board.P2Cups[i] - (i + 1))
+                overflow += max(0, board.P1Cups[i] - (6 - i))
+            return float(0.9) * score_variant + float(0.9) * stone_variant + float(0.7) * overflow
         else:
-            return board.scoreCups[self.num - 1]/float(48)
+            score_variant = board.scoreCups[1] - board.scoreCups[0]
+            stone_variant = sum(board.P2Cups) - sum(board.P1Cups)
+            overflow = 0
+            for i in xrange(board.NCUPS):
+                overflow += max(0, board.P2Cups[i] - (i + 1))
+                overflow -= max(0, board.P1Cups[i] - (6 - i))
+            return float(0.9) * score_variant + float(0.9) * stone_variant + float(0.7) * overflow
