@@ -1,8 +1,17 @@
 # File: Player.py
 # Author(s) names AND netid's:
-# Date:
-# Group work statement: <please type the group work statement
-#      given in the pdf here>
+# -----------------------
+# |    name    |  Netid |
+# -----------------------
+# | Xiangyu Ji |  xjq158|     |
+# -----------------------
+# |  Chong Yan | cyu422 |
+# -----------------------
+# |  Lin Jiang | ljh235 |
+# -----------------------
+# Date: Apirl 22nd 2016
+# Group work statement: <All group members were present and
+#                       contributing during all work on this project.>
 # Defines a simple artificially intelligent player agent
 # You will define the alpha-beta pruning search algorithm
 # You will also define the score function in the MancalaPlayer class,
@@ -71,7 +80,6 @@ class Player:
         score = -INFINITY
         for m in board.legalMoves(self):
             if ply == 0:
-                #print "turn.score(board) in max value is: " + str(turn.score(board))
                 return turn.score(board)
             # make a new player to play the other side
             opponent = Player(self.opp, self.type, self.ply)
@@ -79,7 +87,6 @@ class Player:
             nextBoard = deepcopy(board)
             nextBoard.makeMove(self, m)
             s = opponent.minValue(nextBoard, ply-1, turn)
-            #print "s in maxValue is: " + str(s)
             if s > score:
                 score = s
         return score
@@ -92,7 +99,6 @@ class Player:
         score = INFINITY
         for m in board.legalMoves(self):
             if ply == 0:
-                #print "turn.score(board) in min Value is: " + str(turn.score(board))
                 return turn.score(board)
             # make a new player to play the other side
             opponent = Player(self.opp, self.type, self.ply)
@@ -100,7 +106,6 @@ class Player:
             nextBoard = deepcopy(board)
             nextBoard.makeMove(self, m)
             s = opponent.maxValue(nextBoard, ply-1, turn)
-            #print "s in minValue is: " + str(s)
             if s < score:
                 score = s
         return score
@@ -130,103 +135,150 @@ class Player:
     # and modify it so that it uses a different termination condition
     # and/or a different move search order.
     def alphaBetaMove(self, board, ply):
-        """ Choose a move with alpha beta pruning.  Returns (score, move) """
+
+        """Implement the alpha-beta prune search algorithm to choose a move
+
+        We improved minimax algorithm by proning some branches of the tree that could
+        never influence the final result.
+
+        Args:
+            board (object): The distribution of the stones in the MancalaBoard.
+            ply (int): The number of layers to go in the tree.
+
+        return:
+            the best score and move so far, or return (-1,-1) if the game is over
+
+        """
+
         move = -1
         score = -INFINITY
         turn = self
 
+        # if we're at ply 0, we need to call our eval function & return
         if ply == 0:
-            #if we're at ply 0, we need to call our eval function & return
             return (self.score(board), m)
         if board.gameOver():
-            return (-1, -1)  # Can't make a move, the game is over
-        # value_range = [-INFINITY, INFINITY]
+            return (-1, -1)
+        #: initial the alpha-beta value in upper level
         alpha = -INFINITY
         beta = INFINITY
         for m in board.legalMoves(self):
             nb = deepcopy(board)
-            #make a new board
             nb.makeMove(self, m)
-            #try the move
-            opp = MancalaPlayer(self.opp, self.type, self.ply)
+
+            opp = xjq158(self.opp, self.type, self.ply)
+
+            #: pass alpha, beta into next level
             s = opp.minValue_pruning(nb, ply-1, turn, alpha, beta)
-            #and see what the opponent would do next
+            # check what the opponent would do next
+            # if the result is better than our best score so far,
+            # save that move, and score
             if s > score:
-                #if the result is better than our best score so far, save that move,score
                 move = m
                 score = s
             alpha = max(alpha, score)
+            # cut branch instantly
             if beta <= alpha:
                 break
-        #return the best score and move so far
         return score, move
-        # return (-1,1)
-
 
     def maxValue_pruning(self, board, ply, turn, alpha, beta):
-        """ Find the minimax value for the next move for this player
-        at a given board configuation. Returns score."""
+        """ For the alpha-beta pruning, find the max value for the next move for
+            this player at a given board configuation, while cut-branch as
+            algorithm demonstration.
+
+        Args:
+            board (object): The distribution of the stones in the MancalaBoard.
+            ply (int): The number of layers to go in the tree.
+            turn (Player): Which player is supposed to move.
+            alpha (int): The lower bound of score.
+            beta (int): The upper bound of score.
+
+        return:
+            The best score this layer get.
+
+        """
         if board.gameOver() or ply == 0:
             return turn.score(board)
         score = -INFINITY
         for m in board.legalMoves(self):
-            opponent = MancalaPlayer(self.opp, self.type, self.ply)
+            opponent = xjq158(self.opp, self.type, self.ply)
             # Copy the board so that we don't ruin it
             nextBoard = deepcopy(board)
             nextBoard.makeMove(self, m)
             s = opponent.minValue_pruning(nextBoard, ply-1, turn, alpha, beta)
-            #print "s in maxValue is: " + str(s)
             score = max(score, s)
             alpha = max(alpha, score)
+            #: cut branch
             if beta <= alpha:
                 break
         return score
 
 
     def minValue_pruning(self, board, ply, turn, alpha, beta):
-        """ Find the minimax value for the next move for this player
-            at a given board configuation. Returns score."""
+        """ For alpha-beta pruning, find the min value for the next move for
+            this player at a given board configuation. Returns score.
+
+        Args:
+            board (object): The distribution of the stones in the MancalaBoard.
+            ply (int): The number of layers to go in the tree.
+            turn (Player): Which player is supposed to move.
+            alpha (int): The lower bound of score.
+            beta (int): The upper bound of score.
+
+        return:
+            The best score this layer get.
+
+        """
         if board.gameOver() or ply == 0:
             return turn.score(board)
         score = INFINITY
         for m in board.legalMoves(self):
-            opponent = MancalaPlayer(self.opp, self.type, self.ply)
+            opponent = xjq158(self.opp, self.type, self.ply)
             # Copy the board so that we don't ruin it
             nextBoard = deepcopy(board)
             nextBoard.makeMove(self, m)
             s = opponent.maxValue_pruning(nextBoard, ply-1, turn, alpha, beta)
-            #print "s in minValue is: " + str(s)
             score = min(score, s)
             beta = min(beta, score)
+            #: cut branch
             if beta <= alpha:
                 break
         return score
 
     def custom_move(self, board, ply):
-        """ Choose a move with alpha beta pruning.  Returns (score, move) """
+        """ Choose a move with alpha beta pruning.  Returns (score, move)
+
+        Our custom player mainly focus on the improvement of the heuristic score
+        function for the game.
+
+        Also, it would force the player to choose the move if can give the player
+        a second chance to play
+
+        The depth of the move search is set static to be 10.
+        """
+
         move = -1
         score = -INFINITY
         turn = self
-
 
         if self.num == 1:
             cups = board.P1Cups
         else:
             cups = board.P2Cups
+
+        #: encourage the AI player to first chose the move that can earn seacond
+        #: chance, from right to left in the player's viewpoint.
         for i in range(board.NCUPS):
             if cups[6 - i - 1] == i + 1:
                 return 100, 6 - i
+
         if ply == 0:
             #if we're at ply 0, we need to call our eval function & return
             return (self.score(board), m)
         if board.gameOver():
             return (-1, -1)  # Can't make a move, the game is over
-        # value_range = [-INFINITY, INFINITY]
 
-        # if self.num == 1:
-        #     for k in xrange(len(self.P1Cups)):
-        #         if self.P1Cups[k] == 6 - k:
-        #
 
         alpha = -INFINITY
         beta = INFINITY
@@ -235,7 +287,7 @@ class Player:
             #make a new board
             nb.makeMove(self, m)
             #try the move
-            opp = MancalaPlayer(self.opp, self.type, self.ply)
+            opp = xjq158(self.opp, self.type, self.ply)
             s = opp.minValue_pruning(nb, ply-1, turn, alpha, beta)
             #and see what the opponent would do next
             if s > score:
@@ -245,37 +297,24 @@ class Player:
             alpha = max(alpha, score)
             if beta <= alpha:
                 break
-        #return the best score and move so far
         return score, move
-        # return (-1,1)
 
 
     def chooseMove(self, board):
-        """ Returns the next move that this player wants to make """
+        """ Returns the next move that this player wants to make"""
         if self.type == self.HUMAN:
             move = input("Please enter your move:")
             while not board.legalMove(self, move):
-                print move, "is not valid"
                 move = input( "Please enter your move" )
             return move
         elif self.type == self.RANDOM:
             move = choice(board.legalMoves(self))
-            print "chose move", move
             return move
         elif self.type == self.MINIMAX:
             val, move = self.minimaxMove(board, self.ply)
-            print "chose move", move, " with value", val
             return move
         elif self.type == self.ABPRUNE:
             val, move = self.alphaBetaMove(board, self.ply)
-            print "chose move", move, " with value", val
-            print board.P2Cups[::-1]
-            print board.P1Cups
-            # val2, move2 = self.minimaxMove(board, self.ply)
-            # print "==========Minigmax=========="
-            # print val2, move2
-            # print "===========Pruning============"
-            # print val, move
             return move
         elif self.type == self.CUSTOM:
             # TODO: Implement a custom player
@@ -284,29 +323,27 @@ class Player:
             # algorithm you like.  Remember that your player must make
             # each move in about 10 seconds or less.
             val, move = self.custom_move(board, 10)
-            print "chose move", move, " with value", val
-            print board.P2Cups[::-1]
-            print board.P1Cups
             return move
-            # print "Custom player not yet implemented"
-            # return -1
         else:
             print "Unknown player type"
             return -1
 
 
 # Note, you should change the name of this player to be your netid
-class MancalaPlayer(Player):
+class xjq158(Player):
     """ Defines a player that knows how to evaluate a Mancala gameboard
         intelligently """
 
     def score(self, board):
-        """ Evaluate the Mancala board for this player """
+        """ Calculate the score based on the distribution
+            of the Mancalaboard for the player
+
+            This part would encourage the score to add more 100 in wining
+            condition and minus 100 in losing
+        """
         # Currently this function just calls Player's score
         # function.  You should replace the line below with your own code
         # for evaluating the board
-        #print "Calling score in MancalaPlayer"
-        # return Player.score(self, board)
         if board.hasWon(self.num):
             return self.score_calculate(board) + float(100.0)
         elif board.hasWon(self.opp):
@@ -315,44 +352,56 @@ class MancalaPlayer(Player):
             return self.score_calculate(board)
 
     def score_calculate(self, board):
+
+        """Helper function to customize the claculatation the score for the player
+
+        Consider condition:
+            - encourage the stone in self manala be more than the opponent by difference
+            - encourage the total stones in self pits/holes to be more than the opponent
+            - avoid pits with 0 stone to reduce the risk of being eaten
+            - avoid moving stons to opponent's pits
+
+        The weight of these variables are pre-tuned in the range of (0, 1.5),
+        in step of 0.1.
+
+        As result, we choose 0.9, 0.9, 0.2, 1.3
+
+        Args:
+            board (object): The distribution of the stones in the MancalaBoard.
+
+        return:
+            The score for the current board state.
+
+        """
+        # if the playerNum is 1, then we could calculate the score
         if self.num == 1:
             score_variant = board.scoreCups[0] - board.scoreCups[1]
             stone_variant = sum(board.P1Cups) - sum(board.P2Cups)
+            # initiate overflow
             overflow = 0
             capture = 0
             for i in xrange(board.NCUPS):
+                # calculate the stones for playerNum 2 according to the weighted pits
                 overflow -= max(0, board.P2Cups[i] - (i + 1))
+                # calculate the stones for playerNum 1 according to the weighted pits
                 overflow += max(0, board.P1Cups[i] - (6 - i))
                 if board.P2Cups[i] > 0 and board.P2Cups[i] <= 5 - i and board.P2Cups[i + board.P2Cups[i]] == 0:
                     capture = max(capture, board.P1Cups[5 - i - board.P2Cups[i]])
 
             return float(0.9) * score_variant + float(0.9) * stone_variant + float(0.2) * overflow - float(1.3) * capture
         else:
+            # if the playerNum is 2, then we could calculate the score
             score_variant = board.scoreCups[1] - board.scoreCups[0]
             stone_variant = sum(board.P2Cups) - sum(board.P1Cups)
+            # initiate overflow
             overflow = 0
             capture = 0
             for i in xrange(board.NCUPS):
+                # calculate the stones for playerNum 2 according to the weighted pits
                 overflow += max(0, board.P2Cups[i] - (i + 1))
+                # calculate the stones for playerNum 1 according to the weighted pits
                 overflow -= max(0, board.P1Cups[i] - (6 - i))
                 if board.P1Cups[i] > 0 and board.P1Cups[i] <= 5 - i and board.P1Cups[i + board.P1Cups[i]] == 0:
                     capture = max(capture, board.P2Cups[5 - i - board.P1Cups[i]])
 
             return float(0.9) * score_variant + float(0.9) * stone_variant + float(0.2) * overflow - float(1.3) * capture
-    # def score_calculate(self, board):
-    #     if self.num == 1:
-    #         score_variant = board.scoreCups[0] - board.scoreCups[1]
-    #         stone_variant = sum(board.P1Cups) - sum(board.P2Cups)
-    #         overflow = 0
-    #         for i in xrange(board.NCUPS):
-    #             overflow += max(0, board.P2Cups[i] - (6 - i))
-    #             overflow -= max(0, board.P1Cups[i] - (6 - i))
-    #         return float(0.9) * score_variant + float(0.9) * stone_variant + float(0.2) * overflow
-    #     else:
-    #         score_variant = board.scoreCups[1] - board.scoreCups[0]
-    #         stone_variant = sum(board.P2Cups) - sum(board.P1Cups)
-    #         overflow = 0
-    #         for i in xrange(board.NCUPS):
-    #             overflow -= max(0, board.P2Cups[i] - (6 - i))
-    #             overflow += max(0, board.P1Cups[i] - (6 - i))
-    #         return float(0.9) * score_variant + float(0.9) * stone_variant + float(0.2) * overflow

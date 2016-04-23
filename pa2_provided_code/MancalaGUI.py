@@ -1,7 +1,7 @@
 
 from Tkinter import *
 from MancalaBoard import *
-from Player import *
+from xjq158 import *
 
 class MancalaWindow:
     """# A very simple GUI for playing the game of Mancala."""
