@@ -215,7 +215,6 @@ class Player:
             if cups[i] == i + 1:
                 return 100, i
 
-
         if ply == 0:
             #if we're at ply 0, we need to call our eval function & return
             return (self.score(board), m)
@@ -352,37 +351,21 @@ class MancalaPlayer(Player):
             score_variant = board.scoreCups[0] - board.scoreCups[1]
             stone_variant = sum(board.P1Cups) - sum(board.P2Cups)
             overflow = 0
+            capture = 0
             for i in xrange(board.NCUPS):
                 overflow -= max(0, board.P2Cups[i] - (i + 1))
                 overflow += max(0, board.P1Cups[i] - (6 - i))
-            return float(0.9) * score_variant + float(0.9) * stone_variant + float(0.7) * overflow
+                if board.P1Cups[i] > 0 and board.P2Cups[i] <= 5 - i and board.P1Cups[i + board.P1Cups[i]] == 0:
+                    capture = max(capture, board.P2Cups[5 - i - board.P1Cups[i]])
+            return float(0.9) * score_variant + float(0.9) * stone_variant + float(0.7) * overflow + float(0.7) * capture
         else:
             score_variant = board.scoreCups[1] - board.scoreCups[0]
             stone_variant = sum(board.P2Cups) - sum(board.P1Cups)
             overflow = 0
+            capture = 0
             for i in xrange(board.NCUPS):
                 overflow += max(0, board.P2Cups[i] - (i + 1))
                 overflow -= max(0, board.P1Cups[i] - (6 - i))
-            return float(0.9) * score_variant + float(0.9) * stone_variant + float(0.7) * overflow
-
-    def score_calculate2(self, board):
-        if self.num == 1:
-            score_variant = board.scoreCups[0] - board.scoreCups[1]
-            stone_variant = sum(board.P1Cups) - sum(board.P2Cups)
-            empty_cup = 0
-            for i in xrange(board.NCUPS):
-                if board.P1Cups[i] == 0:
-                    empty_cup += 6 - i
-                if board.P2Cups[i] == 0:
-                    empty_cup -= 6 - i
-            return float(0.9) * score_variant + float(0.9) * stone_variant + float(1.0) * empty_cup
-        else:
-            score_variant = board.scoreCups[1] - board.scoreCups[0]
-            stone_variant = sum(board.P2Cups) - sum(board.P1Cups)
-            empty_cup = 0
-            for i in xrange(board.NCUPS):
-                if board.P1Cups[i] == 0:
-                    empty_cup -= 6 - i
-                if board.P2Cups[i] == 0:
-                    empty_cup += 6 - i
-            return float(0.9) * score_variant + float(0.9) * stone_variant + float(1.0) * empty_cup
+                if board.P2Cups[i] > 0 and board.P2Cups[i] <= 5 - i and board.P2Cups[i + board.P2Cups[i]] == 0:
+                    capture = max(capture, board.P1Cups[5 - i - board.P2Cups[i]])
+            return float(0.9) * score_variant + float(0.9) * stone_variant + float(0.7) * overflow + float(0.7) * capture
