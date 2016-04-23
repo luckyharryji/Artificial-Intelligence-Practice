@@ -202,6 +202,53 @@ class Player:
                 break
         return score
 
+    def custom_move(self, board, ply):
+        """ Choose a move with alpha beta pruning.  Returns (score, move) """
+        move = -1
+        score = -INFINITY
+        turn = self
+
+
+        if self.num == 1:
+            cups = board.P1Cups
+        else:
+            cups = board.P2Cups
+        for i in range(board.NCUPS):
+            if cups[6 - i - 1] == i + 1:
+                return 100, 6 - i
+        if ply == 0:
+            #if we're at ply 0, we need to call our eval function & return
+            return (self.score(board), m)
+        if board.gameOver():
+            return (-1, -1)  # Can't make a move, the game is over
+        # value_range = [-INFINITY, INFINITY]
+
+        # if self.num == 1:
+        #     for k in xrange(len(self.P1Cups)):
+        #         if self.P1Cups[k] == 6 - k:
+        #
+
+        alpha = -INFINITY
+        beta = INFINITY
+        for m in board.legalMoves(self):
+            nb = deepcopy(board)
+            #make a new board
+            nb.makeMove(self, m)
+            #try the move
+            opp = MancalaPlayer(self.opp, self.type, self.ply)
+            s = opp.minValue_pruning(nb, ply-1, turn, alpha, beta)
+            #and see what the opponent would do next
+            if s > score:
+                #if the result is better than our best score so far, save that move,score
+                move = m
+                score = s
+            alpha = max(alpha, score)
+            if beta <= alpha:
+                break
+        #return the best score and move so far
+        return score, move
+        # return (-1,1)
+
 
     def chooseMove(self, board):
         """ Returns the next move that this player wants to make """
@@ -222,8 +269,8 @@ class Player:
         elif self.type == self.ABPRUNE:
             val, move = self.alphaBetaMove(board, self.ply)
             print "chose move", move, " with value", val
+            print board.P2Cups[::-1]
             print board.P1Cups
-            print board.P2Cups
             # val2, move2 = self.minimaxMove(board, self.ply)
             # print "==========Minigmax=========="
             # print val2, move2
@@ -236,8 +283,13 @@ class Player:
             # function.  You may use whatever search algorithm and scoring
             # algorithm you like.  Remember that your player must make
             # each move in about 10 seconds or less.
-            print "Custom player not yet implemented"
-            return -1
+            val, move = self.custom_move(board, 10)
+            print "chose move", move, " with value", val
+            print board.P2Cups[::-1]
+            print board.P1Cups
+            return move
+            # print "Custom player not yet implemented"
+            # return -1
         else:
             print "Unknown player type"
             return -1
@@ -255,28 +307,52 @@ class MancalaPlayer(Player):
         # for evaluating the board
         #print "Calling score in MancalaPlayer"
         # return Player.score(self, board)
-        # if board.hasWon(self.num):
-        #     return 100.0
-        # elif board.hasWon(self.opp):
-        #     return 0.0
-        # else:
-        return self.score_calculate(board)
-            # return board.scoreCups[self.num - 1]/float(48)
+        if board.hasWon(self.num):
+            return self.score_calculate(board) + float(100.0)
+        elif board.hasWon(self.opp):
+            return self.score_calculate(board) - float(100.0)
+        else:
+            return self.score_calculate(board)
 
     def score_calculate(self, board):
         if self.num == 1:
             score_variant = board.scoreCups[0] - board.scoreCups[1]
             stone_variant = sum(board.P1Cups) - sum(board.P2Cups)
             overflow = 0
+            capture = 0
             for i in xrange(board.NCUPS):
                 overflow -= max(0, board.P2Cups[i] - (i + 1))
                 overflow += max(0, board.P1Cups[i] - (6 - i))
-            return float(0.9) * score_variant + float(0.9) * stone_variant + float(0.7) * overflow
+                if board.P2Cups[i] > 0 and board.P2Cups[i] <= 5 - i and board.P2Cups[i + board.P2Cups[i]] == 0:
+                    capture = max(capture, board.P1Cups[5 - i - board.P2Cups[i]])
+
+            return float(0.9) * score_variant + float(0.9) * stone_variant + float(0.2) * overflow - float(1.3) * capture
         else:
             score_variant = board.scoreCups[1] - board.scoreCups[0]
             stone_variant = sum(board.P2Cups) - sum(board.P1Cups)
             overflow = 0
+            capture = 0
             for i in xrange(board.NCUPS):
                 overflow += max(0, board.P2Cups[i] - (i + 1))
                 overflow -= max(0, board.P1Cups[i] - (6 - i))
-            return float(0.9) * score_variant + float(0.9) * stone_variant + float(0.7) * overflow
+                if board.P1Cups[i] > 0 and board.P1Cups[i] <= 5 - i and board.P1Cups[i + board.P1Cups[i]] == 0:
+                    capture = max(capture, board.P2Cups[5 - i - board.P1Cups[i]])
+
+            return float(0.9) * score_variant + float(0.9) * stone_variant + float(0.2) * overflow - float(1.3) * capture
+    # def score_calculate(self, board):
+    #     if self.num == 1:
+    #         score_variant = board.scoreCups[0] - board.scoreCups[1]
+    #         stone_variant = sum(board.P1Cups) - sum(board.P2Cups)
+    #         overflow = 0
+    #         for i in xrange(board.NCUPS):
+    #             overflow += max(0, board.P2Cups[i] - (6 - i))
+    #             overflow -= max(0, board.P1Cups[i] - (6 - i))
+    #         return float(0.9) * score_variant + float(0.9) * stone_variant + float(0.2) * overflow
+    #     else:
+    #         score_variant = board.scoreCups[1] - board.scoreCups[0]
+    #         stone_variant = sum(board.P2Cups) - sum(board.P1Cups)
+    #         overflow = 0
+    #         for i in xrange(board.NCUPS):
+    #             overflow -= max(0, board.P2Cups[i] - (6 - i))
+    #             overflow += max(0, board.P1Cups[i] - (6 - i))
+    #         return float(0.9) * score_variant + float(0.9) * stone_variant + float(0.2) * overflow
