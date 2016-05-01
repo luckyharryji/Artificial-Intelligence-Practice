@@ -1,7 +1,7 @@
 
 from Tkinter import *
 from MancalaBoard import *
-from Player import *
+from xjq158 import *
 
 class MancalaWindow:
     """# A very simple GUI for playing the game of Mancala."""
@@ -30,25 +30,21 @@ class MancalaWindow:
 
         self.status = Label(frame, text=displayStr)
         self.status.pack(side=BOTTOM)
-        print "board initial"
 
     def enableBoard(self):
         """ Allow a human player to make moves by clicking"""
-        print "enable board"
         for i in [0, 1]:
             for j in range(self.game.NCUPS):
                 self.cups[i][j].bind("<Button-1>", self.callback)
 
     def disableBoard(self):
         """ Prevent the human player from clicking while the computer thinks"""
-        print "disable board"
         for i in [0, 1]:
             for j in range(self.game.NCUPS):
                 self.cups[i][j].unbind("<Button-1>")
 
     def makeBoard( self, frame ):
         """ Create the board """
-        print "make board"
         boardFrame = Frame(frame)
         boardFrame.pack(side=TOP)
 
@@ -87,7 +83,6 @@ class MancalaWindow:
 
     def drawBoard( self ):
         """ Draw the board on the canvas """
-        print "draw board"
         self.p2cup.create_oval(self.PAD, self.PAD, self.CUPW, 0.9*self.HEIGHT, width=2 )
         binW = self.BOARDW/self.game.NCUPS
         binH = self.HEIGHT/2
@@ -100,7 +95,6 @@ class MancalaWindow:
 
     def newgame(self):
         """ Start a new game between the players """
-        print "start a new game"
         self.game.reset()
         self.turn = self.p1
         self.wait = self.p2
@@ -116,7 +110,6 @@ class MancalaWindow:
         """ Find out what to do next.  If the game is over, report who
             won.  If it's a human player's turn, enable the board for
             a click.  If it's a computer player's turn, choose the next move."""
-        print "continue game"
         self.root.update()
         if self.game.gameOver():
             if self.game.hasWon(self.p1.num):
@@ -138,7 +131,6 @@ class MancalaWindow:
 
     def swapTurns( self ):
         """ Change whose turn it is"""
-        print "swap turens"
         temp = self.turn
         self.turn = self.wait
         self.wait = temp
@@ -151,7 +143,6 @@ class MancalaWindow:
     def resetStones(self):
         """ Clear the stones and redraw them """
         # Put the stones in the cups
-        print "reset stones"
         for i in range(len(self.game.P2Cups)):
             index = (len(self.game.P2Cups)-i)-1
             self.clearCup(self.cups[1][index])
@@ -169,7 +160,6 @@ class MancalaWindow:
 
     def clearCup( self, cup ):
         """ Clear the stones in the given cup"""
-        print "clear cups"
         titems = cup.find_withtag("num")
         stones = cup.find_withtag("stone")
         cup.delete(titems)
@@ -179,7 +169,6 @@ class MancalaWindow:
     def callback(self, event):
         """ Handle the human player's move"""
         # calculate which box the click was in
-        print "calling callback"
         moveAgain = True
         self.disableBoard()
         if self.turn.num == 1:
