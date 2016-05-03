@@ -3,7 +3,7 @@ import struct, string, math
 
 class SudokuBoard:
     """This will be the sudoku board game object your player will manipulate."""
-  
+
     def __init__(self, size, board):
       """the constructor for the SudokuBoard"""
       self.BoardSize = size #the size of the board
@@ -17,8 +17,8 @@ class SudokuBoard:
         self.CurrentGameBoard[row][col]=value
         #return a new board of the same size with the value added
         return SudokuBoard(self.BoardSize, self.CurrentGameBoard)
-                                                                  
-                                                                  
+
+
     def print_board(self):
         """Prints the current game board. Leaves unassigned spots blank."""
         div = int(math.sqrt(self.BoardSize))
@@ -74,9 +74,9 @@ def parse_file(filename):
         col = int(chars[1])
         val = int(chars[2])
         board[row-1][col-1]=val
-    
+
     return board
-    
+
 def is_complete(sudoku_board):
     """Takes in a sudoku board and tests to see if it has been filled in
     correctly."""
@@ -117,7 +117,58 @@ def solve(initial_board, forward_checking = False, MRV = False, Degree = False,
     """Takes an initial SudokuBoard and solves it using back tracking, and zero
     or more of the heuristics and constraint propagation methods (determined by
     arguments). Returns the resulting board solution. """
-    print "Your code will solve the initial_board here!"
-    print "Remember to return the final board (the SudokuBoard object)."
-    print "I'm simply returning initial_board for demonstration purposes."
+
+
+    # print "Your code will solve the initial_board here!"
+    # print "Remember to return the final board (the SudokuBoard object)."
+    # print "I'm simply returning initial_board for demonstration purposes."
+    final_board = solve_helper(initial_board, 0, 0)
+    return final_board
+
+def solve_helper(initial_board, row, col):
+    if is_complete(initial_board):
+        print "Found Solution!!!"
+        initial_board.print_board()
+        return initial_board
+
+    r, c = find_next_pos(initial_board, row, col)
+    # print r, ", ", c
+    if r == None or c == None:
+        return initial_board
+    for val in range(1, initial_board.BoardSize + 1):
+        if is_legal(initial_board, r, c, val):
+            initial_board.set_value(r, c, val)
+            solve_helper(initial_board, r, c)
+            initial_board.set_value(r, c, 0)
     return initial_board
+
+
+def find_next_pos(initial_board, row, col):
+    BoardArray = initial_board.CurrentGameBoard
+    for i in range(col, initial_board.BoardSize):
+        if BoardArray[row][i] == 0:
+            return row, i
+    for r in range(row + 1, initial_board.BoardSize):
+        for c in range(initial_board.BoardSize):
+            if BoardArray[r][c] == 0:
+                return r, c
+    return None, None
+
+def is_legal(initial_board, row, col, val):
+    BoardArray = initial_board.CurrentGameBoard
+    size = len(BoardArray)
+    for i in range(initial_board.BoardSize):
+        if ((BoardArray[row][i] == val) and i != col):
+            return False
+        if ((BoardArray[i][col] == val) and i != row):
+            return False
+    subsquare = int(math.sqrt(size))
+    SquareRow = row // subsquare
+    SquareCol = col // subsquare
+    for i in range(subsquare):
+        for j in range(subsquare):
+            if((BoardArray[SquareRow*subsquare+i][SquareCol*subsquare+j] == val)
+                and (SquareRow*subsquare + i != row)
+                and (SquareCol*subsquare + j != col)):
+                    return False
+    return True
