@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import struct, string, math
+import copy
 
 class SudokuBoard:
     """This will be the sudoku board game object your player will manipulate."""
@@ -122,14 +123,21 @@ def solve(initial_board, forward_checking = False, MRV = False, Degree = False,
     # print "Your code will solve the initial_board here!"
     # print "Remember to return the final board (the SudokuBoard object)."
     # print "I'm simply returning initial_board for demonstration purposes."
-    final_board = solve_helper(initial_board, 0, 0)
-    return final_board
+    res = []
+    count = 0
+    solve_helper(initial_board, 0, 0, res, count)
+    print res[1]
+    return res[0]
 
-def solve_helper(initial_board, row, col):
+def solve_helper(initial_board, row, col, res, count):
+    if len(res) > 1:
+        return
     if is_complete(initial_board):
         print "Found Solution!!!"
-        initial_board.print_board()
-        return initial_board
+        #initial_board.print_board()
+        res.append(copy.deepcopy(initial_board))
+        res.append(count)
+        return
 
     r, c = find_next_pos(initial_board, row, col)
     # print r, ", ", c
@@ -138,9 +146,8 @@ def solve_helper(initial_board, row, col):
     for val in range(1, initial_board.BoardSize + 1):
         if is_legal(initial_board, r, c, val):
             initial_board.set_value(r, c, val)
-            solve_helper(initial_board, r, c)
+            solve_helper(initial_board, r, c, res, count + 1)
             initial_board.set_value(r, c, 0)
-    return initial_board
 
 
 def find_next_pos(initial_board, row, col):
