@@ -141,11 +141,16 @@ def solve_helper_new(initial_board, status_space, forward_checking, MRV, MCV, LC
     next_row, next_col = find_next_pos_new(initial_board, status_space, forward_checking, MRV, MCV, LCV)
 
     if next_row == None or next_col == None:
+        return initial_board
         if is_complete(initial_board):
             return initial_board, count
         else:
             return None, count
-    temp_domain_list = status_space[str(next_row) + ',' + str(next_col)]
+
+    if LCV:
+        temp_domain_list = LCV_helper(initial_board, status_space, next_row, next_col)
+    else:
+        temp_domain_list = status_space[str(next_row) + ',' + str(next_col)]
     if temp_domain_list:
         for value in temp_domain_list:
             if (not forward_checking and is_legal(initial_board, next_row, next_col, value)) or (LCV and is_legal(initial_board, next_row, next_col, value)) or (forward_checking and not LCV):
@@ -157,12 +162,10 @@ def solve_helper_new(initial_board, status_space, forward_checking, MRV, MCV, LC
                 if forward_checking:
                     temp_status_space = forward_checking_helper(initial_board, temp_status_space, next_row, next_col, value)
 
-                #try to solve Sudoku
-                result = solve_helper_new(temp_board, temp_status_space, forward_checking, MRV, MCV, LCV, count)
+                result, count = solve_helper_new(temp_board, temp_status_space, forward_checking, MRV, MCV, LCV, count)
 
-                #if you solved it, then return the final board
-                if result:
-                    return result
+                if result != None:
+                    return result, count
     return None, count
 
 
@@ -231,6 +234,11 @@ def find_next_pos_new(initial_board, status_space, forward_checking, MRV, MCV, L
                     if temp_length == 1:
                         break
         return next_row, next_col
+    else:
+        for i in xrange(size):
+            for j in xrange(size):
+                if board[i][j] == 0:
+                    return i, j
     return None, None
 
 
@@ -260,7 +268,26 @@ def forward_checking_helper(initial_board, status_space, row, col, value):
                 status_space[str(i + start_row) + ',' + str(j + start_col)] = [x for x in temp_value_list if x != value]
     return status_space
 
+def LCV_helper(initial_board, status_space, row, col):
+    candidate_list = status_space[str(row) + ',' + str(col)]
+    board = initial_board.CurrentGameBoard
+    size = initial_board.BoardSize
 
+    inconsistanct_count_dict = dict()
+
+    for value in candidate_list:
+        inconsistanct_count_dict[value] = 0
+        temp_board = copy.deepcopy(initial_board)
+        temp_board.set_value(row, col, value)
+        for i in xrange(size):
+            for j in xrange(size):
+                if i != row or j != col:
+                    temp_value_list = status_space[str(i) + ',' + str(j)]
+                    if temp_value_list:
+                        for temp_value in temp_value_list:
+                            if not is_legal(temp_board, i, j, temp_value):
+                                inconsistanct_count_dict[value] += 1
+    return sorted(candidate_list, key = lambda val: inconsistanct_count_dict[val])
 
 
 '''
