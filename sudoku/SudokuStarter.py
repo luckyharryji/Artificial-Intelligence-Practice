@@ -113,55 +113,58 @@ def init_board(file_name):
     board = parse_file(file_name)
     return SudokuBoard(len(board), board)
 
+
+
 def solve(initial_board, forward_checking = False, MRV = False, Degree = False,
-    LCV = False):
+    LCV = False, MCV = False):
     """Takes an initial SudokuBoard and solves it using back tracking, and zero
     or more of the heuristics and constraint propagation methods (determined by
     arguments). Returns the resulting board solution. """
 
-
-    # print "Your code will solve the initial_board here!"
-    # print "Remember to return the final board (the SudokuBoard object)."
-    # print "I'm simply returning initial_board for demonstration purposes."
-    res = []
+    # res = []
     count = 0
-    space = initial_status_space(initial_board, forward_checking)
-    print space
-    solve_helper(initial_board, 0, 0, res, count)
-    print res[1]
-    return res[0]
 
-def solve_helper(initial_board, row, col, res, count):
-    if len(res) > 1:
-        return
+    status_space = initial_status_space(initial_board, forward_checking)
+
+    result, after_count = solve_helper_new(initial_board, status_space, forward_checking, MRV, MCV, LCV, count)
+
+    if not result:
+        print "No Solution"
+    return result
+
+
+def solve_helper_new(initial_board, status_space, forward_checking, MRV, MCV, LCV, count):
+    #if the board is complete, the puzzle is solved
     if is_complete(initial_board):
-        print "Found Solution!!!"
-        #initial_board.print_board()
-        res.append(copy.deepcopy(initial_board))
-        res.append(count)
-        return
+        return initial_board, count
 
-    r, c = find_next_pos(initial_board, row, col)
-    # print r, ", ", c
-    if r == None or c == None:
-        return initial_board
-    for val in range(1, initial_board.BoardSize + 1):
-        if is_legal(initial_board, r, c, val):
-            initial_board.set_value(r, c, val)
-            solve_helper(initial_board, r, c, res, count + 1)
-            initial_board.set_value(r, c, 0)
+    next_row, next_col = find_next_pos_new(initial_board, status_space, forward_checking, MRV, MCV, LCV)
 
+    if next_row == None or next_col == None:
+        if is_complete(initial_board):
+            return initial_board, count
+        else:
+            return None, count
+    temp_domain_list = status_space[str(next_row) + ',' + str(next_col)]
+    if temp_domain_list:
+        for value in temp_domain_list:
+            if (not forward_checking and is_legal(initial_board, next_row, next_col, value)) or (LCV and is_legal(initial_board, next_row, next_col, value)) or (forward_checking and not LCV):
+                temp_board = copy.deepcopy(initial_board)
+                temp_board.set_value(next_row, next_col, value)
+                count += 1
 
-def find_next_pos(initial_board, row, col):
-    BoardArray = initial_board.CurrentGameBoard
-    for i in range(col, initial_board.BoardSize):
-        if BoardArray[row][i] == 0:
-            return row, i
-    for r in range(row + 1, initial_board.BoardSize):
-        for c in range(initial_board.BoardSize):
-            if BoardArray[r][c] == 0:
-                return r, c
-    return None, None
+                temp_status_space = copy.deepcopy(status_space)
+                if forward_checking:
+                    temp_status_space = forward_checking_helper(initial_board, temp_status_space, next_row, next_col, value)
+
+                #try to solve Sudoku
+                result = solve_helper_new(temp_board, temp_status_space, forward_checking, MRV, MCV, LCV, count)
+
+                #if you solved it, then return the final board
+                if result:
+                    return result
+    return None, count
+
 
 def is_legal(initial_board, row, col, val):
     '''
@@ -206,3 +209,109 @@ def initial_status_space(initial_board, forward_checking):
             else:
                 status_space[str(i) + ',' + str(j)] = None
     return status_space
+
+
+def find_next_pos_new(initial_board, status_space, forward_checking, MRV, MCV, LCV):
+
+    """Chooses an unassigned location to try values in based on which heuristics are on
+    """
+    #MRV = choose the variable with the fewest values left
+    board = initial_board.CurrentGameBoard
+    size = initial_board.BoardSize
+    next_row = None
+    next_col = None
+    if forward_checking and MRV:
+        temp_length = size + 1
+        for i in xrange(size):
+            for j in xrange(size):
+                if board[i][j] == 0 and status_space[str(i) + ',' + str(j)] and 0 < len(status_space[str(i) + ',' + str(j)]) < temp_length:
+                    temp_length = len(status_space[str(i) + ',' + str(j)])
+                    next_row = i
+                    next_col = j
+                    if temp_length == 1:
+                        break
+        return next_row, next_col
+    return None, None
+
+
+
+def forward_checking_helper(initial_board, status_space, row, col, value):
+
+    board = initial_board.CurrentGameBoard
+    size = initial_board.BoardSize
+
+    for col_index in xrange(size):
+        temp_value_list = status_space[str(row) + ',' + str(col_index)]
+        if temp_value_list:
+            status_space[str(row) + ',' + str(col_index)] = [x for x in temp_value_list if x != value]
+
+    for row_index in xrange(size):
+        temp_value_list = status_space[str(row_index) + ',' + str(col)]
+        if temp_value_list:
+            status_space[str(row_index) + ',' + str(col)] = [x for x in temp_value_list if x != value]
+
+    subsquare = int(math.sqrt(size))
+    start_row = row - row % subsquare
+    start_col = col - col % subsquare
+    for i in xrange(subsquare):
+        for j in xrange(subsquare):
+            temp_value_list = status_space[str(i + start_row) + ',' + str(j + start_col)]
+            if temp_value_list:
+                status_space[str(i + start_row) + ',' + str(j + start_col)] = [x for x in temp_value_list if x != value]
+    return status_space
+
+
+
+
+'''
+=======================================
+'''
+def solve_old(initial_board, forward_checking = False, MRV = False, Degree = False,
+    LCV = False):
+    """Takes an initial SudokuBoard and solves it using back tracking, and zero
+    or more of the heuristics and constraint propagation methods (determined by
+    arguments). Returns the resulting board solution. """
+
+
+    # print "Your code will solve the initial_board here!"
+    # print "Remember to return the final board (the SudokuBoard object)."
+    # print "I'm simply returning initial_board for demonstration purposes."
+    res = []
+    count = 0
+    space = initial_status_space(initial_board, forward_checking)
+    print space
+    solve_helper(initial_board, 0, 0, res, count)
+    print res[1]
+    return res[0]
+
+
+def solve_helper(initial_board, row, col, res, count):
+    if len(res) > 1:
+        return
+    if is_complete(initial_board):
+        print "Found Solution!!!"
+        #initial_board.print_board()
+        res.append(copy.deepcopy(initial_board))
+        res.append(count)
+        return
+
+    r, c = find_next_pos(initial_board, row, col)
+    # print r, ", ", c
+    if r == None or c == None:
+        return initial_board
+    for val in range(1, initial_board.BoardSize + 1):
+        if is_legal(initial_board, r, c, val):
+            initial_board.set_value(r, c, val)
+            solve_helper(initial_board, r, c, res, count + 1)
+            initial_board.set_value(r, c, 0)
+
+
+def find_next_pos(initial_board, row, col):
+    BoardArray = initial_board.CurrentGameBoard
+    for i in range(col, initial_board.BoardSize):
+        if BoardArray[row][i] == 0:
+            return row, i
+    for r in range(row + 1, initial_board.BoardSize):
+        for c in range(initial_board.BoardSize):
+            if BoardArray[r][c] == 0:
+                return r, c
