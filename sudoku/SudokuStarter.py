@@ -116,7 +116,7 @@ def init_board(file_name):
 
 
 def solve(initial_board, forward_checking = False, MRV = False, Degree = False,
-    LCV = False, MCV = False):
+    LCV = False):
     """Takes an initial SudokuBoard and solves it using back tracking, and zero
     or more of the heuristics and constraint propagation methods (determined by
     arguments). Returns the resulting board solution. """
@@ -126,33 +126,32 @@ def solve(initial_board, forward_checking = False, MRV = False, Degree = False,
 
     status_space = initial_status_space(initial_board, forward_checking)
 
-    result, after_count = solve_helper_new(initial_board, status_space, forward_checking, MRV, MCV, LCV, count)
+    result, after_count = solve_helper_new(initial_board, status_space, forward_checking, MRV, Degree, LCV, count)
 
     if not result:
         print "No Solution"
     return result
 
 
-def solve_helper_new(initial_board, status_space, forward_checking, MRV, MCV, LCV, count):
+def solve_helper_new(initial_board, status_space, forward_checking, MRV, Degree, LCV, count):
     #if the board is complete, the puzzle is solved
     if is_complete(initial_board):
         return initial_board, count
-
-    next_row, next_col = find_next_pos_new(initial_board, status_space, forward_checking, MRV, MCV, LCV)
-
+    next_row, next_col = find_next_pos_new(initial_board, status_space, forward_checking, MRV, Degree, LCV)
+    # print initial_board.print_board()
     if next_row == None or next_col == None:
-        return initial_board
-        if is_complete(initial_board):
-            return initial_board, count
-        else:
-            return None, count
-
+        return initial_board, count
+        # if is_complete(initial_board):
+        #     return initial_board, count
+        # else:
+        #     return None, count
     if LCV:
         temp_domain_list = LCV_helper(initial_board, status_space, next_row, next_col)
     else:
         temp_domain_list = status_space[str(next_row) + ',' + str(next_col)]
     if temp_domain_list:
         for value in temp_domain_list:
+            # initial_board.print_board()
             if (not forward_checking and is_legal(initial_board, next_row, next_col, value)) or (LCV and is_legal(initial_board, next_row, next_col, value)) or (forward_checking and not LCV):
                 temp_board = copy.deepcopy(initial_board)
                 temp_board.set_value(next_row, next_col, value)
@@ -161,8 +160,7 @@ def solve_helper_new(initial_board, status_space, forward_checking, MRV, MCV, LC
                 temp_status_space = copy.deepcopy(status_space)
                 if forward_checking:
                     temp_status_space = forward_checking_helper(initial_board, temp_status_space, next_row, next_col, value)
-
-                result, count = solve_helper_new(temp_board, temp_status_space, forward_checking, MRV, MCV, LCV, count)
+                result, count = solve_helper_new(temp_board, temp_status_space, forward_checking, MRV, Degree, LCV, count)
 
                 if result != None:
                     return result, count
@@ -214,16 +212,16 @@ def initial_status_space(initial_board, forward_checking):
     return status_space
 
 
-def find_next_pos_new(initial_board, status_space, forward_checking, MRV, MCV, LCV):
+def find_next_pos_new(initial_board, status_space, forward_checking, MRV, Degree, LCV):
 
     """Chooses an unassigned location to try values in based on which heuristics are on
     """
     #MRV = choose the variable with the fewest values left
     board = initial_board.CurrentGameBoard
     size = initial_board.BoardSize
-    next_row = None
-    next_col = None
-    if forward_checking and MRV:
+    next_row = 0
+    next_col = 0
+    if MRV:
         temp_length = size + 1
         for i in xrange(size):
             for j in xrange(size):
@@ -234,6 +232,17 @@ def find_next_pos_new(initial_board, status_space, forward_checking, MRV, MCV, L
                     if temp_length == 1:
                         break
         return next_row, next_col
+    elif Degree:
+        temp_constriant_number = -1
+        for i in xrange(size):
+            for j in xrange(size):
+                if board[i][j] == 0 and (status_space[str(i) + ',' + str(j)] != None):
+                    constraints_variable_number = degress_heuristic_helper(initial_board, status_space, i, j)
+                    if constraints_variable_number > temp_constriant_number:
+                        temp_constriant_number = constraints_variable_number
+                        next_row = i
+                        next_col = j
+        return next_row, next_col
     else:
         for i in xrange(size):
             for j in xrange(size):
@@ -241,7 +250,28 @@ def find_next_pos_new(initial_board, status_space, forward_checking, MRV, MCV, L
                     return i, j
     return None, None
 
+def degress_heuristic_helper(initial_board, status_space, row, col):
+    board = initial_board.CurrentGameBoard
+    size = initial_board.BoardSize
 
+    constraint_variable_count = 0
+
+    for index in xrange(size):
+        if board[row][index] == 0 and index != col:
+            constraint_variable_count += 1
+        if board[index][col] == 0 and index != row:
+            constraint_variable_count += 1
+
+    subsquare = int(math.sqrt(size))
+    SquareRow = row // subsquare
+    SquareCol = col // subsquare
+
+    for i in xrange(subsquare):
+        for j in xrange(subsquare):
+            if board[i][j] == 0:
+                if (SquareRow*subsquare + i != row) or (SquareCol*subsquare + j != col):
+                    constraint_variable_count += 1
+    return constraint_variable_count
 
 def forward_checking_helper(initial_board, status_space, row, col, value):
 
