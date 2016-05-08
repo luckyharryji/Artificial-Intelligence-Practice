@@ -125,6 +125,8 @@ def solve(initial_board, forward_checking = False, MRV = False, Degree = False,
     # print "I'm simply returning initial_board for demonstration purposes."
     res = []
     count = 0
+    space = initial_status_space(initial_board, forward_checking)
+    print space
     solve_helper(initial_board, 0, 0, res, count)
     print res[1]
     return res[0]
@@ -162,6 +164,9 @@ def find_next_pos(initial_board, row, col):
     return None, None
 
 def is_legal(initial_board, row, col, val):
+    '''
+    Decide if it is leagel to set val in [row, col] for board
+    '''
     BoardArray = initial_board.CurrentGameBoard
     size = len(BoardArray)
     for i in range(initial_board.BoardSize):
@@ -179,3 +184,25 @@ def is_legal(initial_board, row, col, val):
                 and (SquareCol*subsquare + j != col)):
                     return False
     return True
+
+
+def initial_status_space(initial_board, forward_checking):
+    '''
+    Initial the reamaining value for the board
+    '''
+    board = initial_board.CurrentGameBoard
+    size = initial_board.BoardSize
+    status_space = dict()
+    for i in xrange(size):
+        for j in xrange(size):
+            status_space[str(i) + ',' + str(j)] = list()
+            if board[i][j] == 0:
+                for value in xrange(1,size+1):
+                    if forward_checking:
+                        if is_legal(initial_board, i, j, value):
+                            status_space[str(i) + ',' + str(j)].append(value)
+                    else:
+                        status_space[str(i) + ',' + str(j)].append(value)
+            else:
+                status_space[str(i) + ',' + str(j)] = None
+    return status_space

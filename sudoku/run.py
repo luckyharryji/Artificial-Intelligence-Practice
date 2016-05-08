@@ -5,4 +5,4 @@ sb.print_board()
 
 fb = solve(sb, True, True, False, False)
 
-fb.print_board()
+# fb.print_board()
