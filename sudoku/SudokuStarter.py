@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import struct, string, math
 import copy
+import time
 
 class SudokuBoard:
     """This will be the sudoku board game object your player will manipulate."""
@@ -121,13 +122,15 @@ def solve(initial_board, forward_checking = False, MRV = False, Degree = False,
     or more of the heuristics and constraint propagation methods (determined by
     arguments). Returns the resulting board solution. """
 
-    # res = []
+    start = time.clock()
     count = 0
 
     status_space = initial_status_space(initial_board, forward_checking)
 
     result, after_count = solve_helper_new(initial_board, status_space, forward_checking, MRV, Degree, LCV, count)
 
+    elapsed = (time.clock() - start)
+    print("Time used:",elapsed)
     if not result:
         print "No Solution"
     return result
@@ -193,7 +196,21 @@ def is_legal(initial_board, row, col, val):
 
 def initial_status_space(initial_board, forward_checking):
     '''
-    Initial the reamaining value for the board
+    Create the remaining domain status space for the input game board
+
+    If forward_checking is set to True, check to see if it is leagel to set the
+    specific value, else, create the list with all possible value for the board
+
+    Input:
+        initial_board(SudokuBoard): the input of the game board
+        forward_checking(bool): Whether to use the forward_checking strategy
+
+    Output:
+        dict():
+            key: 'row, col';
+            value: the remaining value choice for the input
+                if the square is already occupied by the input: None
+                else is the list of possible value for the space
     '''
     board = initial_board.CurrentGameBoard
     size = initial_board.BoardSize
@@ -237,7 +254,7 @@ def find_next_pos_new(initial_board, status_space, forward_checking, MRV, Degree
         for i in xrange(size):
             for j in xrange(size):
                 if board[i][j] == 0 and (status_space[str(i) + ',' + str(j)] != None):
-                    constraints_variable_number = degress_heuristic_helper(initial_board, status_space, i, j)
+                    constraints_variable_number = degress_heuristic_helper(initial_board, i, j)
                     if constraints_variable_number > temp_constriant_number:
                         temp_constriant_number = constraints_variable_number
                         next_row = i
@@ -250,7 +267,7 @@ def find_next_pos_new(initial_board, status_space, forward_checking, MRV, Degree
                     return i, j
     return None, None
 
-def degress_heuristic_helper(initial_board, status_space, row, col):
+def degress_heuristic_helper(initial_board, row, col):
     board = initial_board.CurrentGameBoard
     size = initial_board.BoardSize
 
@@ -268,7 +285,7 @@ def degress_heuristic_helper(initial_board, status_space, row, col):
 
     for i in xrange(subsquare):
         for j in xrange(subsquare):
-            if board[i][j] == 0:
+            if board[SquareRow*subsquare + i][SquareCol*subsquare + j] == 0:
                 if (SquareRow*subsquare + i != row) or (SquareCol*subsquare + j != col):
                     constraint_variable_count += 1
     return constraint_variable_count
