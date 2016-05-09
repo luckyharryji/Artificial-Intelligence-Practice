@@ -122,7 +122,8 @@ def solve(initial_board, forward_checking = False, MRV = False, Degree = False,
     or more of the heuristics and constraint propagation methods (determined by
     arguments). Returns the resulting board solution. """
 
-    start = time.clock()
+    global start_time
+    start_time = time.clock()
 
     #: initail the possible domain value status space for the board
     status_space = initial_status_space(initial_board, forward_checking)
@@ -131,7 +132,7 @@ def solve(initial_board, forward_checking = False, MRV = False, Degree = False,
     count = 0
     result, after_count = solve_helper_new(initial_board, status_space, forward_checking, MRV, Degree, LCV, count)
 
-    elapsed = (time.clock() - start)
+    elapsed = (time.clock() - start_time)
     print "total test : ", after_count, " value"
     print("Time used:",elapsed)
     if not result:
@@ -146,6 +147,12 @@ def solve_helper_new(initial_board, status_space, forward_checking, MRV, Degree,
     iterate through the status space for the remaining domain value until find
     the solution/solution does not exist
     '''
+
+    # if time duration is more than 10 minutes, immediately return
+    global start_time
+    temp_elapsed = (time.clock() - start_time)
+    if int(temp_elapsed) > 600:
+        return None, count
     #: return if the board is a valid solution
     if is_complete(initial_board):
         return initial_board, count
