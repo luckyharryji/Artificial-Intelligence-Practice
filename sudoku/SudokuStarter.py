@@ -150,6 +150,7 @@ def solve_helper_new(initial_board, status_space, forward_checking, MRV, Degree,
     else:
         temp_domain_list = status_space[str(next_row) + ',' + str(next_col)]
     if temp_domain_list:
+        # print temp_domain_list
         for value in temp_domain_list:
             # initial_board.print_board()
             if (not forward_checking and is_legal(initial_board, next_row, next_col, value)) or (LCV and is_legal(initial_board, next_row, next_col, value)) or (forward_checking and not LCV):
@@ -216,7 +217,6 @@ def find_next_pos_new(initial_board, status_space, forward_checking, MRV, Degree
 
     """Chooses an unassigned location to try values in based on which heuristics are on
     """
-    #MRV = choose the variable with the fewest values left
     board = initial_board.CurrentGameBoard
     size = initial_board.BoardSize
     next_row = 0
@@ -304,20 +304,22 @@ def LCV_helper(initial_board, status_space, row, col):
     size = initial_board.BoardSize
 
     inconsistanct_count_dict = dict()
-
-    for value in candidate_list:
-        inconsistanct_count_dict[value] = 0
-        temp_board = copy.deepcopy(initial_board)
-        temp_board.set_value(row, col, value)
-        for i in xrange(size):
-            for j in xrange(size):
-                if i != row or j != col:
-                    temp_value_list = status_space[str(i) + ',' + str(j)]
-                    if temp_value_list:
-                        for temp_value in temp_value_list:
-                            if not is_legal(temp_board, i, j, temp_value):
-                                inconsistanct_count_dict[value] += 1
-    return sorted(candidate_list, key = lambda val: inconsistanct_count_dict[val])
+    if candidate_list:
+        for value in candidate_list:
+            inconsistanct_count_dict[value] = 0
+            temp_board = copy.deepcopy(initial_board)
+            temp_board.set_value(row, col, value)
+            for i in xrange(size):
+                for j in xrange(size):
+                    if i != row or j != col:
+                        temp_value_list = status_space[str(i) + ',' + str(j)]
+                        if temp_value_list:
+                            for temp_value in temp_value_list:
+                                if not is_legal(temp_board, i, j, temp_value):
+                                    inconsistanct_count_dict[value] += 1
+        return sorted(candidate_list, key = lambda val: inconsistanct_count_dict[val], reverse = True)
+    else:
+        return []
 
 
 '''

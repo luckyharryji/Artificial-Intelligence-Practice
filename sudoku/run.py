@@ -1,8 +1,8 @@
 from SudokuStarter import *
 
-sb = init_board("input_puzzles/more/16x16/16x16.20.sudoku")
+sb = init_board("input_puzzles/easy/25_25.sudoku")
 sb.print_board()
 
-fb = solve(sb, True, True, False, False)
+fb = solve(sb, True, True, False, True)
 
 fb.print_board()
