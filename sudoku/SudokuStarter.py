@@ -161,19 +161,16 @@ def solve_helper_new(initial_board, status_space, forward_checking, MRV, Degree,
     else:
         temp_domain_list = status_space[str(next_row) + ',' + str(next_col)]
     if temp_domain_list:
-        # print temp_domain_list
         for value in temp_domain_list:
-            # initial_board.print_board()
-            if (not forward_checking and is_legal(initial_board, next_row, next_col, value)) or (LCV and is_legal(initial_board, next_row, next_col, value)) or (forward_checking and not LCV):
+            # decide if value for the position is leagel by here
+            if forward_checking or (not forward_checking and is_legal(initial_board, next_row, next_col, value)):
                 temp_board = copy.deepcopy(initial_board)
+                temp_status_space = copy.deepcopy(status_space)
                 temp_board.set_value(next_row, next_col, value)
                 count += 1
-
-                temp_status_space = copy.deepcopy(status_space)
                 if forward_checking:
                     temp_status_space = forward_checking_helper(initial_board, temp_status_space, next_row, next_col, value)
                 result, count = solve_helper_new(temp_board, temp_status_space, forward_checking, MRV, Degree, LCV, count)
-
                 if result != None:
                     return result, count
     return None, count
@@ -182,6 +179,8 @@ def solve_helper_new(initial_board, status_space, forward_checking, MRV, Degree,
 def is_legal(initial_board, row, col, val):
     '''
     Decide if it is leagel to set val in [row, col] for board
+
+    Decide if in the Same row, Same col, Same square
     '''
     BoardArray = initial_board.CurrentGameBoard
     size = len(BoardArray)
@@ -318,20 +317,27 @@ def degress_heuristic_helper(initial_board, row, col):
     return constraint_variable_count
 
 def forward_checking_helper(initial_board, status_space, row, col, value):
+    '''
+    Behave forward checking for the game board
 
+    Remove inconsistant value if set value to the position row, col
+    '''
     board = initial_board.CurrentGameBoard
     size = initial_board.BoardSize
 
+    #: remove inconsistant value in same row
     for col_index in xrange(size):
         temp_value_list = status_space[str(row) + ',' + str(col_index)]
         if temp_value_list:
             status_space[str(row) + ',' + str(col_index)] = [x for x in temp_value_list if x != value]
 
+    #: remove inconsistant value in same col
     for row_index in xrange(size):
         temp_value_list = status_space[str(row_index) + ',' + str(col)]
         if temp_value_list:
             status_space[str(row_index) + ',' + str(col)] = [x for x in temp_value_list if x != value]
 
+    #: remove inconsistant value in same square
     subsquare = int(math.sqrt(size))
     start_row = row - row % subsquare
     start_col = col - col % subsquare
@@ -343,10 +349,21 @@ def forward_checking_helper(initial_board, status_space, row, col, value):
     return status_space
 
 def LCV_helper(initial_board, status_space, row, col):
+    '''
+    Return the list of possible value for the position(row, col)
+    in the order that each rules out the fewest choices for other unassigned variables.
+
+    Input:
+        initial_board(@SudokuBoard): game board input
+        status_space(dict): remaining domain space
+        row, col(int): position
+    Output:
+        list: the possible value for the position
+    '''
     candidate_list = status_space[str(row) + ',' + str(col)]
     board = initial_board.CurrentGameBoard
     size = initial_board.BoardSize
-
+    #: dict to record number of inconsistant choice for other variable
     inconsistanct_count_dict = dict()
     if candidate_list:
         for value in candidate_list:
