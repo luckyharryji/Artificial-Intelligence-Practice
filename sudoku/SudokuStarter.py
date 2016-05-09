@@ -132,6 +132,7 @@ def solve(initial_board, forward_checking = False, MRV = False, Degree = False,
     result, after_count = solve_helper_new(initial_board, status_space, forward_checking, MRV, Degree, LCV, count)
 
     elapsed = (time.clock() - start)
+    print "total test : ", after_count, " value"
     print("Time used:",elapsed)
     if not result:
         print "No Solution"
@@ -163,10 +164,11 @@ def solve_helper_new(initial_board, status_space, forward_checking, MRV, Degree,
     if temp_domain_list:
         for value in temp_domain_list:
             # decide if value for the position is leagel by here
-            if forward_checking or (not forward_checking and is_legal(initial_board, next_row, next_col, value)):
+            if forward_checking or is_legal(initial_board, next_row, next_col, value):
                 temp_board = copy.deepcopy(initial_board)
                 temp_status_space = copy.deepcopy(status_space)
                 temp_board.set_value(next_row, next_col, value)
+                #: count the number of variable assignment
                 count += 1
                 if forward_checking:
                     temp_status_space = forward_checking_helper(initial_board, temp_status_space, next_row, next_col, value)
