@@ -123,10 +123,12 @@ def solve(initial_board, forward_checking = False, MRV = False, Degree = False,
     arguments). Returns the resulting board solution. """
 
     start = time.clock()
-    count = 0
 
+    #: initail the possible domain value status space for the board
     status_space = initial_status_space(initial_board, forward_checking)
 
+    #: variable used for count the number of level
+    count = 0
     result, after_count = solve_helper_new(initial_board, status_space, forward_checking, MRV, Degree, LCV, count)
 
     elapsed = (time.clock() - start)
@@ -137,11 +139,17 @@ def solve(initial_board, forward_checking = False, MRV = False, Degree = False,
 
 
 def solve_helper_new(initial_board, status_space, forward_checking, MRV, Degree, LCV, count):
-    #if the board is complete, the puzzle is solved
+    '''
+    Main recursive function for the game solving problem
+
+    iterate through the status space for the remaining domain value until find
+    the solution/solution does not exist
+    '''
+    #: return if the board is a valid solution
     if is_complete(initial_board):
         return initial_board, count
+    #: choose the next variable position to be assigned
     next_row, next_col = find_next_pos_new(initial_board, status_space, forward_checking, MRV, Degree, LCV)
-    # print initial_board.print_board()
     if next_row == None or next_col == None:
         return initial_board, count
         # if is_complete(initial_board):
@@ -231,9 +239,17 @@ def initial_status_space(initial_board, forward_checking):
 
 
 def find_next_pos_new(initial_board, status_space, forward_checking, MRV, Degree, LCV):
+    '''
+    choose the next variable to be testified based on the input heuristic choice
 
-    """Chooses an unassigned location to try values in based on which heuristics are on
-    """
+    Input:
+        initial_board(SudokuBoard): game board input
+        status_space(dict): domain status space for the board
+        ... different heuristic choice
+    Output:
+        row, col(int, int): the next position to be recursived and testified
+        None, None: there are no position to be testified, invalid
+    '''
     board = initial_board.CurrentGameBoard
     size = initial_board.BoardSize
     next_row = 0
@@ -242,12 +258,13 @@ def find_next_pos_new(initial_board, status_space, forward_checking, MRV, Degree
         temp_length = size + 1
         for i in xrange(size):
             for j in xrange(size):
-                if board[i][j] == 0 and status_space[str(i) + ',' + str(j)] and 0 < len(status_space[str(i) + ',' + str(j)]) < temp_length:
+                if board[i][j] == 0 and status_space[str(i) + ',' + str(j)] != None and 0 < len(status_space[str(i) + ',' + str(j)]) < temp_length:
                     temp_length = len(status_space[str(i) + ',' + str(j)])
                     next_row = i
                     next_col = j
+                    #: if find a position with only one remaining value, return
                     if temp_length == 1:
-                        break
+                        return next_row, next_col
         return next_row, next_col
     elif Degree:
         temp_constriant_number = -1
@@ -268,6 +285,16 @@ def find_next_pos_new(initial_board, status_space, forward_checking, MRV, Degree
     return None, None
 
 def degress_heuristic_helper(initial_board, row, col):
+    '''
+    Helper function for degree heuristic
+
+    Find the number of constraint variable for the give position row, col
+    Input:
+        initial_board(@SudokuBoard): Input game board
+        row, col(int): position of the variable
+    Output:
+        constraint_variable_count(int): number of constraint variable for the position
+    '''
     board = initial_board.CurrentGameBoard
     size = initial_board.BoardSize
 
