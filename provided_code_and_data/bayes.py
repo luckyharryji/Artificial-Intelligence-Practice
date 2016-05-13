@@ -14,6 +14,14 @@ class Bayes_Classifier:
         is ready to classify input text."""
         self.positive_hash = dict()
         self.negative_hash = dict()
+        self.try_load_pickle()
+
+    def try_load_pickle(self):
+        try:
+            self.positive_hash = self.load('positive_word_count')
+            self.negative_hash = self.load('negative_word_count')
+        except:
+            self.positive_hash, self.negative_hash = self.train()
 
     def train(self):
         """Trains the Naive Bayes Sentiment Classifier."""
@@ -86,4 +94,4 @@ class Bayes_Classifier:
 
 if __name__ == '__main__':
     test_obj = Bayes_Classifier()
-    positive_set, negative_set = test_obj.train()
+    # positive_set, negative_set = test_obj.train()
