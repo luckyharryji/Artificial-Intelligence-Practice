@@ -1,4 +1,11 @@
 #!/usr/bin/env python
+
+# Xiangyu Ji  |  xjq158
+# Chong Yan   |  cyu422
+# Lin Jiang   |  ljh235
+# Date: May 8th 2016
+# All group members were present and contributing during all work on this project. 
+
 import struct, string, math
 import copy
 import time
