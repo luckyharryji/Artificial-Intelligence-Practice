@@ -5,6 +5,7 @@
 #
 
 import math, os, pickle, re
+import random
 
 class Bayes_Classifier:
     def __init__(self):
@@ -58,6 +59,112 @@ class Bayes_Classifier:
         self.save(self.count, 'data_num_count')
         self.save(self.word_list, 'word_list')
         return self.positive_hash, self.negative_hash
+
+    def cross_validation(self):
+        '''
+        Perform Cross Validation with the Naive Bayes
+        '''
+        file_name_list = list()
+        for file_obj in os.walk('movies_reviews/'):
+            file_name_list = file_obj[2]
+        random.shuffle(file_name_list)
+        num_of_file = len(file_name_list)
+        bank_of_file_list = list()
+        # bank_of_file_list = [file_name_list[i : i + num_of_file / 10] for i in range(num_of_file / 10) ]
+        batch_size = num_of_file / 10
+        for i in range(10):
+            if i = 9:
+                bank_of_file_list.append(file_name_list[i * batch_size :])
+            else:
+                bank_of_file_list.append(file_name_list[i * batch_size : i * batch_size + batch_size])
+        for index in range(10):
+            training_file = list()
+            for index_train in range(10):
+                if index_train != index:
+                    training_file += bank_of_file_list[index_train]
+            testing_file = bank_of_file_list[index]
+            count, word_list, positive_hash, negative_hash = self.training_file_list(training_file)
+
+
+        self.save(self.positive_hash, 'positive_word_count')
+        self.save(self.negative_hash, 'negative_word_count')
+        self.save(self.count, 'data_num_count')
+        self.save(self.word_list, 'word_list')
+        return self.positive_hash, self.negative_hash
+
+    def training_file_list(self, file_list):
+        count = [0, 0]
+        word_list = list()
+        positive_hash = dict()
+        negative_hash = dict()
+        for file_name in file_list:
+            if file_name[:5] == 'movie':
+                raw_text = self.loadFile('movies_reviews/' + file_name)
+                token_list = self.tokenize(raw_text)
+                if file_name[7] == '5':
+                    count[0] += 1
+                    for token in token_list:
+                        if token not in word_list:
+                            word_list.append(token)
+                        positive_hash[token.lower()] = positive_hash.get(token.lower(), 0) + 1
+                else:
+                    count[1] += 1
+                    for token in token_list:
+                        if token not in word_list:
+                            word_list.append(token)
+                        negative_hash[token.lower()] = negative_hash.get(token.lower(), 0) + 1
+        total_word_num = len(word_list)
+        for key in positive_hash:
+            positive_hash[key] = (float(positive_hash[key]) + float(1)) / (float(float(positive_hash[key]) + float(negative_hash.get(key, 0))) + float(total_word_num))
+        for key in negative_hash:
+            negative_hash[key] = (float(negative_hash[key]) + float(1)) / (float(float(negative_hash[key]) + float(positive_hash.get(key, 0))) + float(total_word_num))
+        return count, word_list, positive_hash, negative_hash
+
+
+    def evaluate(self, testing_file_list, count, word_list, positive_hash, negative_hash):
+        positive_right_num, negative_right_num = 0, 0
+        positive_wrong_num, negative_wrong_num = 0, 0
+        positive_num, negative_num = 0, 0
+        for test_file in testing_file_list:
+            if test_file[:5] == 'movie':
+                raw_text = self.loadFile('movies_reviews/' + test_file)
+                input_token = self.tokenize(raw_text)
+                num_of_data = sum(count)
+                num_of_word = len(word_list)
+                p_positive, p_negative = math.log(float(count[0]) / float(num_of_data)), math.log(float(count[1]) / float(num_of_data))
+                for word_token in input_token:
+                    word = word_token.lower()
+                    if positive_hash.get(word):
+                        p_positive += math.log(positive_hash.get(word))
+                    else:
+                        p_positive += math.log(float(1) / float(num_of_word))
+                    if negative_hash.get(word):
+                        p_negative += math.log(negative_hash.get(word))
+                    else:
+                        p_negative += math.log(float(1) / float(num_of_word))
+                if p_positive > p_negative:
+                    if file_name[7] == '5':
+                        positive_num += 1
+                        positive_right_num += 1
+                    else:
+                        negative_num += 1
+                        positive_wrong_num += 1
+                elif p_positive < p_negative:
+                    if file_name[7] == '5':
+                        positive_num += 1
+                        negative_wrong_num += 1
+                    else:
+                        negative_num += 1
+                        negative_right_num += 1
+                else:
+                    if file_name[7] == '5':
+                        positive_num += 1
+                    else:
+                        negative_num += 1
+        num_list = len(testing_file_list)
+        pass
+        # accuracy = float(positive_right_num + negative_right_num) / float(num_list)
+        # recall =
 
     def classify(self, sText):
         """Given a target string sText, this function returns the most likely document
