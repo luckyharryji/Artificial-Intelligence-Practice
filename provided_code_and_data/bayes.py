@@ -73,7 +73,7 @@ class Bayes_Classifier:
         # bank_of_file_list = [file_name_list[i : i + num_of_file / 10] for i in range(num_of_file / 10) ]
         batch_size = num_of_file / 10
         for i in range(10):
-            if i = 9:
+            if i == 9:
                 bank_of_file_list.append(file_name_list[i * batch_size :])
             else:
                 bank_of_file_list.append(file_name_list[i * batch_size : i * batch_size + batch_size])
@@ -84,13 +84,15 @@ class Bayes_Classifier:
                     training_file += bank_of_file_list[index_train]
             testing_file = bank_of_file_list[index]
             count, word_list, positive_hash, negative_hash = self.training_file_list(training_file)
+            self.evaluate(testing_file, count, word_list, positive_hash, negative_hash)
+        pass
 
-
-        self.save(self.positive_hash, 'positive_word_count')
-        self.save(self.negative_hash, 'negative_word_count')
-        self.save(self.count, 'data_num_count')
-        self.save(self.word_list, 'word_list')
-        return self.positive_hash, self.negative_hash
+        #
+        # self.save(self.positive_hash, 'positive_word_count')
+        # self.save(self.negative_hash, 'negative_word_count')
+        # self.save(self.count, 'data_num_count')
+        # self.save(self.word_list, 'word_list')
+        # return self.positive_hash, self.negative_hash
 
     def training_file_list(self, file_list):
         count = [0, 0]
@@ -143,28 +145,53 @@ class Bayes_Classifier:
                     else:
                         p_negative += math.log(float(1) / float(num_of_word))
                 if p_positive > p_negative:
-                    if file_name[7] == '5':
+                    if test_file[7] == '5':
                         positive_num += 1
                         positive_right_num += 1
                     else:
                         negative_num += 1
                         positive_wrong_num += 1
                 elif p_positive < p_negative:
-                    if file_name[7] == '5':
+                    if test_file[7] == '5':
                         positive_num += 1
                         negative_wrong_num += 1
                     else:
                         negative_num += 1
                         negative_right_num += 1
                 else:
-                    if file_name[7] == '5':
+                    if test_file[7] == '5':
                         positive_num += 1
                     else:
                         negative_num += 1
+        print len(testing_file_list)
+        print positive_right_num, positive_wrong_num, negative_right_num, negative_wrong_num, positive_num, negative_num
         num_list = len(testing_file_list)
+        positive_precision = self.calculate_divide(positive_right_num, positive_right_num + positive_wrong_num)
+        positive_recall = self.calculate_divide(positive_right_num, positive_num)
+        negative_precision = self.calculate_divide(negative_right_num, negative_right_num + negative_wrong_num)
+        negative_recall = self.calculate_divide(negative_right_num, negative_num)
+        positive_f1 = self.calculate_f1(positive_precision, positive_recall)
+        negative_f1 = self.calculate_f1(negative_precision, negative_recall)
+        print "Positive:  precision, recall, f1"
+        print positive_precision, positive_recall, positive_f1
+        print "-========================="
+        print "Negative:  precision, recall, f1"
+        print negative_precision, negative_recall, negative_f1
         pass
         # accuracy = float(positive_right_num + negative_right_num) / float(num_list)
         # recall =
+
+    def calculate_f1(self, precision, recall):
+        if recall == 0:
+            return 0
+        else:
+            return float(precision) * float(recall) * 2 / float(float(precision) + float(recall))
+
+    def calculate_divide(self, divide1, divide2):
+        if divide2 != 0:
+            return float(divide1) / float(divide2)
+        else:
+            return 0
 
     def classify(self, sText):
         """Given a target string sText, this function returns the most likely document
@@ -240,5 +267,6 @@ class Bayes_Classifier:
 
 if __name__ == '__main__':
     test_obj = Bayes_Classifier()
-    print test_obj.classify('I love AI class')
+    print test_obj.classify('I Love AI class')
+    test_obj.cross_validation()
     # positive_set, negative_set = test_obj.train()
