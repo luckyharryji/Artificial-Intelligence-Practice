@@ -67,16 +67,24 @@ class Bayes_Classifier:
         file_name_list = list()
         for file_obj in os.walk('movies_reviews/'):
             file_name_list = file_obj[2]
-        random.shuffle(file_name_list)
-        num_of_file = len(file_name_list)
+        positive_file_list = list()
+        negative_file_list = list()
+        for file_name in file_name_list:
+            if file_name[:5] == 'movie':
+                if file_name[7] == '5':
+                    positive_file_list.append(file_name)
+                else:
+                    negative_file_list.append(file_name)
+        # random.shuffle(file_name_list)
+        random.shuffle(positive_file_list)
+        random.shuffle(negative_file_list)
+        # num_of_file = len(file_name_list)
         bank_of_file_list = list()
         # bank_of_file_list = [file_name_list[i : i + num_of_file / 10] for i in range(num_of_file / 10) ]
-        batch_size = num_of_file / 10
+        positive_batch_size = len(positive_file_list) / 10
+        negative_batch_size = len(negative_file_list) / 10
         for i in range(10):
-            if i == 9:
-                bank_of_file_list.append(file_name_list[i * batch_size :])
-            else:
-                bank_of_file_list.append(file_name_list[i * batch_size : i * batch_size + batch_size])
+            bank_of_file_list.append(positive_file_list[i * positive_batch_size : i * positive_batch_size + positive_batch_size] + negative_file_list[i * negative_batch_size : i * negative_batch_size + negative_batch_size])
         for index in range(10):
             training_file = list()
             for index_train in range(10):

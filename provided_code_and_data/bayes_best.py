@@ -122,12 +122,13 @@ class Bayes_Classifier:
         # random.shuffle(file_name_list)
         random.shuffle(positive_file_list)
         random.shuffle(negative_file_list)
-        num_of_file = len(file_name_list)
+        # num_of_file = len(file_name_list)
         bank_of_file_list = list()
         # bank_of_file_list = [file_name_list[i : i + num_of_file / 10] for i in range(num_of_file / 10) ]
-        batch_size = num_of_file / 10
+        positive_batch_size = len(positive_file_list) / 10
+        negative_batch_size = len(negative_file_list) / 10
         for i in range(10):
-            bank_of_file_list.append(positive_file_list[i * batch_size : i * batch_size + batch_size] + negative_file_list[i * batch_size : i * batch_size + batch_size])
+            bank_of_file_list.append(positive_file_list[i * positive_batch_size : i * positive_batch_size + positive_batch_size] + negative_file_list[i * negative_batch_size : i * negative_batch_size + negative_batch_size])
         for index in range(10):
             training_file = list()
             for index_train in range(10):
@@ -137,7 +138,6 @@ class Bayes_Classifier:
             count, word_list, positive_hash, negative_hash = self.training_file_list(training_file)
             self.evaluate(testing_file, count, word_list, positive_hash, negative_hash)
         pass
-
         #
         # self.save(self.positive_hash, 'positive_word_count')
         # self.save(self.negative_hash, 'negative_word_count')
