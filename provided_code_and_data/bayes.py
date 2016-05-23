@@ -31,36 +31,12 @@ class Bayes_Classifier:
         except:
             self.positive_hash, self.negative_hash = self.train()
 
-
     def train(self):
         """Trains the Naive Bayes Sentiment Classifier."""
         file_name_list = list()
-        positive_word_total_frequency, negative_word_total_frequency = 0, 0
         for file_obj in os.walk('movies_reviews/'):
             file_name_list = file_obj[2]
-        for file_name in file_name_list:
-            if file_name[:5] == 'movie':
-                raw_text = self.loadFile('movies_reviews/' + file_name)
-                token_list = self.tokenize(raw_text)
-                if file_name[7] == '5':
-                    self.count[0] += 1
-                    for token in token_list:
-                        if token not in self.word_list:
-                            self.word_list.append(token)
-                        self.positive_hash[token.lower()] = self.positive_hash.get(token.lower(), 0) + 1
-                        positive_word_total_frequency += 1
-                else:
-                    self.count[1] += 1
-                    for token in token_list:
-                        if token not in self.word_list:
-                            self.word_list.append(token)
-                        self.negative_hash[token.lower()] = self.negative_hash.get(token.lower(), 0) + 1
-                        negative_word_total_frequency += 1
-        total_word_num = len(self.word_list)
-        for key in self.positive_hash:
-            self.positive_hash[key] = (float(self.positive_hash[key]) + float(1)) / (float(positive_word_total_frequency) + float(total_word_num))
-        for key in self.negative_hash:
-            self.negative_hash[key] = (float(self.negative_hash[key]) + float(1)) / (float(negative_word_total_frequency) + float(total_word_num))
+        self.count, self.word_list, self.positive_hash, self.negative_hash, positive_word_total_frequency, negative_word_total_frequency = self.count_n_gram_frequency(file_name_list)
         self.positive_negative_word_frequency = [positive_word_total_frequency, negative_word_total_frequency]
         self.save(self.positive_negative_word_frequency, 'positive_negative_word_frequency')
         self.save(self.positive_hash, 'positive_word_count')
@@ -69,49 +45,7 @@ class Bayes_Classifier:
         self.save(self.word_list, 'word_list')
         return self.positive_hash, self.negative_hash
 
-    def cross_validation(self):
-        '''
-        Perform Cross Validation with the Naive Bayes
-        '''
-        file_name_list = list()
-        for file_obj in os.walk('movies_reviews/'):
-            file_name_list = file_obj[2]
-        positive_file_list = list()
-        negative_file_list = list()
-        for file_name in file_name_list:
-            if file_name[:5] == 'movie':
-                if file_name[7] == '5':
-                    positive_file_list.append(file_name)
-                else:
-                    negative_file_list.append(file_name)
-        # random.shuffle(file_name_list)
-        random.shuffle(positive_file_list)
-        random.shuffle(negative_file_list)
-        # num_of_file = len(file_name_list)
-        bank_of_file_list = list()
-        # bank_of_file_list = [file_name_list[i : i + num_of_file / 10] for i in range(num_of_file / 10) ]
-        positive_batch_size = len(positive_file_list) / 10
-        negative_batch_size = len(negative_file_list) / 10
-        for i in range(10):
-            bank_of_file_list.append(positive_file_list[i * positive_batch_size : i * positive_batch_size + positive_batch_size] + negative_file_list[i * negative_batch_size : i * negative_batch_size + negative_batch_size])
-        for index in range(10):
-            training_file = list()
-            for index_train in range(10):
-                if index_train != index:
-                    training_file += bank_of_file_list[index_train]
-            testing_file = bank_of_file_list[index]
-            count, word_list, positive_hash, negative_hash, positive_word_frquency, negative_word_frequency = self.training_file_list(training_file)
-            self.evaluate(testing_file, count, word_list, positive_hash, negative_hash, index, positive_word_frquency, negative_word_frequency)
-        pass
-
-        #
-        # self.save(self.positive_hash, 'positive_word_count')
-        # self.save(self.negative_hash, 'negative_word_count')
-        # self.save(self.count, 'data_num_count')
-        # self.save(self.word_list, 'word_list')
-        # return self.positive_hash, self.negative_hash
-
-    def training_file_list(self, file_list):
+    def count_n_gram_frequency(self, file_list):
         count = [0, 0]
         word_list = list()
         positive_hash = dict()
@@ -142,6 +76,37 @@ class Bayes_Classifier:
             negative_hash[key] = (float(negative_hash[key]) + float(1)) / (float(negative_frequency) + float(total_word_num))
         return count, word_list, positive_hash, negative_hash, positive_frequency, negative_frequency
 
+    def cross_validation(self):
+        '''
+        Perform Cross Validation with the Naive Bayes
+        '''
+        file_name_list = list()
+        for file_obj in os.walk('movies_reviews/'):
+            file_name_list = file_obj[2]
+        positive_file_list = list()
+        negative_file_list = list()
+        for file_name in file_name_list:
+            if file_name[:5] == 'movie':
+                if file_name[7] == '5':
+                    positive_file_list.append(file_name)
+                else:
+                    negative_file_list.append(file_name)
+        random.shuffle(positive_file_list)
+        random.shuffle(negative_file_list)
+        bank_of_file_list = list()
+        positive_batch_size = len(positive_file_list) / 10
+        negative_batch_size = len(negative_file_list) / 10
+        for i in range(10):
+            bank_of_file_list.append(positive_file_list[i * positive_batch_size : i * positive_batch_size + positive_batch_size] + negative_file_list[i * negative_batch_size : i * negative_batch_size + negative_batch_size])
+        for index in range(10):
+            training_file = list()
+            for index_train in range(10):
+                if index_train != index:
+                    training_file += bank_of_file_list[index_train]
+            testing_file = bank_of_file_list[index]
+            count, word_list, positive_hash, negative_hash, positive_word_frquency, negative_word_frequency = self.count_n_gram_frequency(training_file)
+            self.evaluate(testing_file, count, word_list, positive_hash, negative_hash, index, positive_word_frquency, negative_word_frequency)
+        return
 
     def evaluate(self, testing_file_list, count, word_list, positive_hash, negative_hash, index, positive_word_frquency, negative_word_frequency):
         positive_right_num, negative_right_num = 0, 0
@@ -153,17 +118,18 @@ class Bayes_Classifier:
                 input_token = self.tokenize(raw_text)
                 num_of_data = sum(count)
                 num_of_word = len(word_list)
-                p_positive, p_negative = math.log(float(count[0]) / float(num_of_data)), math.log(float(count[1]) / float(num_of_data))
+                # p_positive, p_negative = math.log(float(count[0]) / float(num_of_data)), math.log(float(count[1]) / float(num_of_data))
+                p_positive, p_negative = 0, 0
                 for word_token in input_token:
                     word = word_token.lower()
                     if positive_hash.get(word):
                         p_positive += math.log(positive_hash.get(word))
                     else:
-                        p_positive += math.log(float(1) / float(positive_word_frquency) + float(num_of_word))
+                        p_positive += math.log(float(1) / (float(positive_word_frquency) + float(num_of_word)))
                     if negative_hash.get(word):
                         p_negative += math.log(negative_hash.get(word))
                     else:
-                        p_negative += math.log(float(1) / float(negative_word_frequency) + float(num_of_word))
+                        p_negative += math.log(float(1) / (float(negative_word_frequency) + float(num_of_word)))
                 if p_positive > p_negative:
                     if test_file[7] == '5':
                         positive_num += 1
@@ -206,15 +172,14 @@ class Bayes_Classifier:
         result['negative_f1'] = negative_f1
         result['print positive_right_num, positive_wrong_num, negative_right_num, negative_wrong_num, positive_num, negative_num'] = [positive_right_num, positive_wrong_num, negative_right_num, negative_wrong_num, positive_num, negative_num]
         self.save_evaluation(result, str(index) + '_evalution.json')
-        # pass
-        # accuracy = float(positive_right_num + negative_right_num) / float(num_list)
-        # recall =
+        return
+
     def save_evaluation(self, evaluation_obj, file_name):
         with open(file_name, 'wb') as f_out:
             f_out.write(json.dumps(evaluation_obj))
 
     def calculate_f1(self, precision, recall):
-        if recall == 0:
+        if recall == 0 and precision == 0:
             return 0
         else:
             return float(precision) * float(recall) * 2 / float(float(precision) + float(recall))
@@ -232,10 +197,8 @@ class Bayes_Classifier:
         input_token = self.tokenize(sText)
         num_of_data = sum(self.count)
         num_of_word = len(self.word_list)
-        p_positive, p_negative = math.log(float(self.count[0]) / float(num_of_data)), math.log(float(self.count[1]) / float(num_of_data))
-        # print self.count[0], self.count[1]
-        # print num_of_data
-        # p_positive, p_negative = math.log(float(self.count[0]) / float(num_of_data)), 0
+        # p_positive, p_negative = math.log(float(self.count[0]) / float(num_of_data)), math.log(float(self.count[1]) / float(num_of_data))
+        p_positive, p_negative = 0, 0
         for word_token in input_token:
             word = word_token.lower()
             if self.positive_hash.get(word):
@@ -246,12 +209,14 @@ class Bayes_Classifier:
                 p_negative += math.log(self.negative_hash.get(word))
             else:
                 p_negative += math.log(float(1) / (float(self.positive_negative_word_frequency[1]) + float(num_of_word)))
-        if p_positive > p_negative:
-            return 'Positive'
-        elif p_positive < p_negative:
-            return 'Negative'
-        else:
+        threshold = float(0.001)
+        if abs(float(p_positive) - float(p_negative)) < threshold:
             return 'Neural'
+        else:
+            if p_positive > p_negative:
+                return 'Positive'
+            else:
+                return 'Negative'
 
     def loadFile(self, sFilename):
         """Given a file name, return the contents of the file as a string."""
@@ -301,5 +266,5 @@ if __name__ == '__main__':
     test_obj = Bayes_Classifier()
     # test_obj.count_num()
     print test_obj.classify('I Love AI class')
-    # test_obj.cross_validation()
+    test_obj.cross_validation()
     # positive_set, negative_set = test_obj.train()
