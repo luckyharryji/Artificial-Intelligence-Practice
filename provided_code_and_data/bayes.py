@@ -31,6 +31,7 @@ class Bayes_Classifier:
         except:
             self.positive_hash, self.negative_hash = self.train()
 
+
     def train(self):
         """Trains the Naive Bayes Sentiment Classifier."""
         file_name_list = list()
@@ -210,7 +211,7 @@ class Bayes_Classifier:
         # recall =
     def save_evaluation(self, evaluation_obj, file_name):
         with open(file_name, 'wb') as f_out:
-            f_out.write(json.dumps(file_name))
+            f_out.write(json.dumps(evaluation_obj))
 
     def calculate_f1(self, precision, recall):
         if recall == 0:
@@ -298,6 +299,7 @@ class Bayes_Classifier:
 
 if __name__ == '__main__':
     test_obj = Bayes_Classifier()
+    # test_obj.count_num()
     print test_obj.classify('I Love AI class')
-    test_obj.cross_validation()
+    # test_obj.cross_validation()
     # positive_set, negative_set = test_obj.train()
