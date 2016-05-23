@@ -6,6 +6,7 @@
 
 import math, os, pickle, re
 import random
+import json
 
 class Bayes_Classifier:
     def __init__(self):
@@ -17,6 +18,7 @@ class Bayes_Classifier:
         self.negative_hash = dict()
         self.word_list = list()
         self.count = [0, 0]
+        self.positive_negative_word_frequency = list()
         self.try_load_pickle()
 
     def try_load_pickle(self):
@@ -25,12 +27,14 @@ class Bayes_Classifier:
             self.negative_hash = self.load('negative_word_count')
             self.count = self.load('data_num_count')
             self.word_list = self.load('word_list')
+            self.positive_negative_word_frequency = self.load('positive_negative_word_frequency')
         except:
             self.positive_hash, self.negative_hash = self.train()
 
     def train(self):
         """Trains the Naive Bayes Sentiment Classifier."""
         file_name_list = list()
+        positive_word_total_frequency, negative_word_total_frequency = 0, 0
         for file_obj in os.walk('movies_reviews/'):
             file_name_list = file_obj[2]
         for file_name in file_name_list:
@@ -43,17 +47,21 @@ class Bayes_Classifier:
                         if token not in self.word_list:
                             self.word_list.append(token)
                         self.positive_hash[token.lower()] = self.positive_hash.get(token.lower(), 0) + 1
+                        positive_word_total_frequency += 1
                 else:
                     self.count[1] += 1
                     for token in token_list:
                         if token not in self.word_list:
                             self.word_list.append(token)
                         self.negative_hash[token.lower()] = self.negative_hash.get(token.lower(), 0) + 1
+                        negative_word_total_frequency += 1
         total_word_num = len(self.word_list)
         for key in self.positive_hash:
-            self.positive_hash[key] = (float(self.positive_hash[key]) + float(1)) / (float(float(self.positive_hash[key]) + float(self.negative_hash.get(key, 0))) + float(total_word_num))
+            self.positive_hash[key] = (float(self.positive_hash[key]) + float(1)) / (float(positive_word_total_frequency) + float(total_word_num))
         for key in self.negative_hash:
-            self.negative_hash[key] = (float(self.negative_hash[key]) + float(1)) / (float(float(self.negative_hash[key]) + float(self.positive_hash.get(key, 0))) + float(total_word_num))
+            self.negative_hash[key] = (float(self.negative_hash[key]) + float(1)) / (float(negative_word_total_frequency) + float(total_word_num))
+        self.positive_negative_word_frequency = [positive_word_total_frequency, negative_word_total_frequency]
+        self.save(self.positive_negative_word_frequency, 'positive_negative_word_frequency')
         self.save(self.positive_hash, 'positive_word_count')
         self.save(self.negative_hash, 'negative_word_count')
         self.save(self.count, 'data_num_count')
@@ -91,8 +99,8 @@ class Bayes_Classifier:
                 if index_train != index:
                     training_file += bank_of_file_list[index_train]
             testing_file = bank_of_file_list[index]
-            count, word_list, positive_hash, negative_hash = self.training_file_list(training_file)
-            self.evaluate(testing_file, count, word_list, positive_hash, negative_hash)
+            count, word_list, positive_hash, negative_hash, positive_word_frquency, negative_word_frequency = self.training_file_list(training_file)
+            self.evaluate(testing_file, count, word_list, positive_hash, negative_hash, index, positive_word_frquency, negative_word_frequency)
         pass
 
         #
@@ -107,6 +115,7 @@ class Bayes_Classifier:
         word_list = list()
         positive_hash = dict()
         negative_hash = dict()
+        positive_frequency, negative_frequency = 0, 0
         for file_name in file_list:
             if file_name[:5] == 'movie':
                 raw_text = self.loadFile('movies_reviews/' + file_name)
@@ -117,21 +126,23 @@ class Bayes_Classifier:
                         if token not in word_list:
                             word_list.append(token)
                         positive_hash[token.lower()] = positive_hash.get(token.lower(), 0) + 1
+                        positive_frequency += 1
                 else:
                     count[1] += 1
                     for token in token_list:
                         if token not in word_list:
                             word_list.append(token)
                         negative_hash[token.lower()] = negative_hash.get(token.lower(), 0) + 1
+                        negative_frequency += 1
         total_word_num = len(word_list)
         for key in positive_hash:
-            positive_hash[key] = (float(positive_hash[key]) + float(1)) / (float(float(positive_hash[key]) + float(negative_hash.get(key, 0))) + float(total_word_num))
+            positive_hash[key] = (float(positive_hash[key]) + float(1)) / (float(positive_frequency) + float(total_word_num))
         for key in negative_hash:
-            negative_hash[key] = (float(negative_hash[key]) + float(1)) / (float(float(negative_hash[key]) + float(positive_hash.get(key, 0))) + float(total_word_num))
-        return count, word_list, positive_hash, negative_hash
+            negative_hash[key] = (float(negative_hash[key]) + float(1)) / (float(negative_frequency) + float(total_word_num))
+        return count, word_list, positive_hash, negative_hash, positive_frequency, negative_frequency
 
 
-    def evaluate(self, testing_file_list, count, word_list, positive_hash, negative_hash):
+    def evaluate(self, testing_file_list, count, word_list, positive_hash, negative_hash, index, positive_word_frquency, negative_word_frequency):
         positive_right_num, negative_right_num = 0, 0
         positive_wrong_num, negative_wrong_num = 0, 0
         positive_num, negative_num = 0, 0
@@ -147,11 +158,11 @@ class Bayes_Classifier:
                     if positive_hash.get(word):
                         p_positive += math.log(positive_hash.get(word))
                     else:
-                        p_positive += math.log(float(1) / float(num_of_word))
+                        p_positive += math.log(float(1) / float(positive_word_frquency) + float(num_of_word))
                     if negative_hash.get(word):
                         p_negative += math.log(negative_hash.get(word))
                     else:
-                        p_negative += math.log(float(1) / float(num_of_word))
+                        p_negative += math.log(float(1) / float(negative_word_frequency) + float(num_of_word))
                 if p_positive > p_negative:
                     if test_file[7] == '5':
                         positive_num += 1
@@ -185,9 +196,21 @@ class Bayes_Classifier:
         print "-========================="
         print "Negative:  precision, recall, f1"
         print negative_precision, negative_recall, negative_f1
-        pass
+        result = dict()
+        result['positive_f1'] = positive_f1
+        result['positive_recall'] = positive_recall
+        result['positive_precision'] = positive_precision
+        result['negative_precision'] = negative_precision
+        result['negative_recall'] = negative_recall
+        result['negative_f1'] = negative_f1
+        result['print positive_right_num, positive_wrong_num, negative_right_num, negative_wrong_num, positive_num, negative_num'] = [positive_right_num, positive_wrong_num, negative_right_num, negative_wrong_num, positive_num, negative_num]
+        self.save_evaluation(result, str(index) + '_evalution.json')
+        # pass
         # accuracy = float(positive_right_num + negative_right_num) / float(num_list)
         # recall =
+    def save_evaluation(self, evaluation_obj, file_name):
+        with open(file_name, 'wb') as f_out:
+            f_out.write(json.dumps(file_name))
 
     def calculate_f1(self, precision, recall):
         if recall == 0:
@@ -217,11 +240,11 @@ class Bayes_Classifier:
             if self.positive_hash.get(word):
                 p_positive += math.log(self.positive_hash.get(word))
             else:
-                p_positive += math.log(float(1) / float(num_of_word))
+                p_positive += math.log(float(1) / (float(self.positive_negative_word_frequency[0]) + float(num_of_word)))
             if self.negative_hash.get(word):
                 p_negative += math.log(self.negative_hash.get(word))
             else:
-                p_negative += math.log(float(1) / float(num_of_word))
+                p_negative += math.log(float(1) / (float(self.positive_negative_word_frequency[1]) + float(num_of_word)))
         if p_positive > p_negative:
             return 'Positive'
         elif p_positive < p_negative:
