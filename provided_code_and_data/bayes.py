@@ -94,8 +94,11 @@ class Bayes_Classifier:
         random.shuffle(positive_file_list)
         random.shuffle(negative_file_list)
         bank_of_file_list = list()
-        positive_batch_size = len(positive_file_list) / 10
-        negative_batch_size = len(negative_file_list) / 10
+        # positive_batch_size = len(positive_file_list) / 10
+        # negative_batch_size = len(negative_file_list) / 10
+        batch_general = min(len(positive_file_list), len(negative_file_list))
+        positive_batch_size = batch_general / 10
+        negative_batch_size = batch_general / 10
         for i in range(10):
             bank_of_file_list.append(positive_file_list[i * positive_batch_size : i * positive_batch_size + positive_batch_size] + negative_file_list[i * negative_batch_size : i * negative_batch_size + negative_batch_size])
         for index in range(10):
