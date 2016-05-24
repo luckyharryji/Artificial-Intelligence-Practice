@@ -62,7 +62,7 @@ class Bayes_Classifier:
 
     def count_n_gram_frequency(self, file_list):
         '''
-        Extract the n-gram feature fromt the given_files
+        Extract the n-gram feature from the given_files
 
         Possibility of word have been add one smoothed
 
@@ -330,7 +330,7 @@ class Bayes_Classifier:
         if sToken != "":
             lTokens.append(sToken)
         return lTokens
-# 
+#
 # if __name__ == '__main__':
 #     test_obj = Bayes_Classifier()
 #     print test_obj.classify('I Love AI class')

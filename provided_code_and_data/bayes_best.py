@@ -26,6 +26,14 @@ class Bayes_Classifier:
         self.try_load_pickle()
 
     def try_load_pickle(self):
+        '''
+        Try to load the required data for classify from the disk
+
+        If the data dose not exist in the disk or no training conducted before,
+        training again with the given dataset
+
+        Load both n-gram and bi-gram feature from disk.
+        '''
         try:
             self.positive_hash = self.load('positive_word_count')
             self.negative_hash = self.load('negative_word_count')
@@ -43,34 +51,20 @@ class Bayes_Classifier:
             self.positive_bigram_training, self.negative_bigram_training = self.extract_bigram_feature()
 
     def train(self):
-        """Trains the Naive Bayes Sentiment Classifier."""
+        """Trains the Naive Bayes Sentiment Classifier for n-gram feature
+
+        After training, the model will be saved to the disk
+        Data to save:
+        self.positive_hash: dict(key: str; value: float): The posibility of each word in the positive training dataset
+        self.negative_hash: dict(key: str; value: float): The posibility of each word in the negative training dataset
+        self.positive_negative_word_frequency: list(int): including 2 elements, recording the number of word appear in the positive negative training set
+        self.count: list(int): including 2 elements, recording how many positive/negative docs are in the system
+        self.word_list: list(str): record the vocabulary list of the training data set
+        """
         file_name_list = list()
-        positive_word_total_frequency, negative_word_total_frequency = 0, 0
         for file_obj in os.walk('movies_reviews/'):
             file_name_list = file_obj[2]
-        for file_name in file_name_list:
-            if file_name[:5] == 'movie':
-                raw_text = self.loadFile('movies_reviews/' + file_name)
-                token_list = self.tokenize(raw_text)
-                if file_name[7] == '5':
-                    self.count[0] += 1
-                    for token in token_list:
-                        if token not in self.word_list:
-                            self.word_list.append(token)
-                        self.positive_hash[token.lower()] = self.positive_hash.get(token.lower(), 0) + 1
-                        positive_word_total_frequency += 1
-                else:
-                    self.count[1] += 1
-                    for token in token_list:
-                        if token not in self.word_list:
-                            self.word_list.append(token)
-                        self.negative_hash[token.lower()] = self.negative_hash.get(token.lower(), 0) + 1
-                        negative_word_total_frequency += 1
-        total_word_num = len(self.word_list)
-        for key in self.positive_hash:
-            self.positive_hash[key] = (float(self.positive_hash[key]) + float(1)) / (float(positive_word_total_frequency) + float(total_word_num))
-        for key in self.negative_hash:
-            self.negative_hash[key] = (float(self.negative_hash[key]) + float(1)) / (float(negative_word_total_frequency) + float(total_word_num))
+        self.count, self.word_list, self.positive_hash, self.negative_hash, positive_word_total_frequency, negative_word_total_frequency = self.count_n_gram_frequency(file_name_list)
         self.positive_negative_word_frequency = [positive_word_total_frequency, negative_word_total_frequency]
         self.save(self.positive_negative_word_frequency, 'positive_negative_word_frequency')
         self.save(self.positive_hash, 'positive_word_count')
@@ -79,19 +73,71 @@ class Bayes_Classifier:
         self.save(self.word_list, 'word_list')
         return self.positive_hash, self.negative_hash
 
+    def count_n_gram_frequency(self, file_list):
+        '''
+        Extract the n-gram feature from the given_files
 
-    def extract_bigram_feature(self):
-        """Get bigram word feature from raw text"""
-        file_name_list = list()
+        Possibility of word have been add one smoothed
+
+        Input:
+            file_list( list(str) ): list of file_name for feature extracture
+        Output:
+            count ( list(int) ): number of positive/negative docs seperately
+            word_list ( list(str) ): words appear in the docs set
+            positive_hash, negative_hash ( dict(key: str) ): Possibility of words in the positive/negative seperately
+            positive_frequency, negative_frequency ( int ): number of words appear in the positive/negative set seperately
+        '''
+        count = [0, 0]
+        word_list = list()
+        positive_hash = dict()
+        negative_hash = dict()
+        positive_frequency, negative_frequency = 0, 0
+        for file_name in file_list:
+            if file_name[:5] == 'movie':
+                raw_text = self.loadFile('movies_reviews/' + file_name)
+                token_list = self.tokenize(raw_text)
+                if file_name[7] == '5':
+                    count[0] += 1
+                    for token in token_list:
+                        if token not in word_list:
+                            word_list.append(token)
+                        positive_hash[token.lower()] = positive_hash.get(token.lower(), 0) + 1
+                        positive_frequency += 1
+                else:
+                    count[1] += 1
+                    for token in token_list:
+                        if token not in word_list:
+                            word_list.append(token)
+                        negative_hash[token.lower()] = negative_hash.get(token.lower(), 0) + 1
+                        negative_frequency += 1
+        total_word_num = len(word_list)
+        for key in positive_hash:
+            positive_hash[key] = (float(positive_hash[key]) + float(1)) / (float(positive_frequency) + float(total_word_num))
+        for key in negative_hash:
+            negative_hash[key] = (float(negative_hash[key]) + float(1)) / (float(negative_frequency) + float(total_word_num))
+        return count, word_list, positive_hash, negative_hash, positive_frequency, negative_frequency
+
+    def count_bigram_frequency(self, file_name_list):
+        '''
+        Extract the bi-gram feature from the given_files
+
+        Bigram are saved as tuple: i.e. [("i", "like"), ("like", "ai")]
+
+        Possibility of bigram counting have been add one smoothed
+
+        Input:
+            file_name_list( list(str) ): list of file_name for feature extracture
+        Output:
+            bigram_list ( list(tuple) ): bigram appear in the docs set
+            positive_bigram, negative_bigram ( dict(key: tuple) ): Possibility of bigram in the positive/negative seperately
+            positive_bigram_frequency, negative_bigram_frequency ( int ): number of bigrams appear in the positive/negative set seperately
+        '''
         positive_bigram = dict()
         negative_bigram = dict()
         bigram_list = list()
         positive_bigram_frequency, negative_bigram_frequency = 0, 0
-        for file_obj in os.walk('movies_reviews/'):
-            file_name_list = file_obj[2]
         for file_name in file_name_list:
             if file_name[:5] == 'movie':
-                print file_name
                 raw_text = self.loadFile('movies_reviews/' + file_name)
                 token_list = self.tokenize(raw_text)
                 length_of_token = len(token_list)
@@ -110,17 +156,43 @@ class Bayes_Classifier:
             positive_bigram[key] = (float(positive_bigram[key]) + float(1)) / (float(positive_bigram_frequency) + float(num_of_bigram))
         for key in negative_bigram:
             negative_bigram[key] = (float(negative_bigram[key]) + float(1)) / (float(negative_bigram_frequency) + float(num_of_bigram))
+        return positive_bigram, negative_bigram, bigram_list, positive_bigram_frequency, negative_bigram_frequency
+
+    def extract_bigram_feature(self):
+        """Get bigram word feature from raw text
+
+        Calling function count_bigram_frequency,
+        save the result locally and in self obj for futher classify
+
+        """
+        file_name_list = list()
+        for file_obj in os.walk('movies_reviews/'):
+            file_name_list = file_obj[2]
+        positive_bigram, negative_bigram, bigram_list, positive_bigram_frequency, negative_bigram_frequency = self.count_bigram_frequency(file_name_list)
         pos_neg_bigram_frequency = [positive_bigram_frequency, negative_bigram_frequency]
         self.bigram_count_list = bigram_list
+        self.positive_bigram_training = positive_bigram
+        self.negative_bigram_training = negative_bigram
+        self.positive_negative_bigram_frequency = pos_neg_bigram_frequency
         self.save(pos_neg_bigram_frequency, "positive_negative_bigram_frequency")
         self.save(positive_bigram, 'positive_bigram')
         self.save(negative_bigram, 'negative_bigram')
         self.save(bigram_list, 'bigram_list')
         return positive_bigram, negative_bigram
 
+
     def cross_validation(self):
         '''
         Perform Cross Validation with the Naive Bayes
+
+        Choose the same number of positive/negative data sets for the valuation.
+        Shuffle and then split the data in to equally number of 10 parts, guarantee
+        equal number of positive/negative docs in each set.
+
+        Use one as testing set and the remaining 9 as training set.
+        For each of the 10 iteration, calculate and compare precision, recall, f1.
+
+        Based on n-gram and bi-gram feature.
         '''
         file_name_list = list()
         for file_obj in os.walk('movies_reviews/'):
@@ -133,14 +205,12 @@ class Bayes_Classifier:
                     positive_file_list.append(file_name)
                 else:
                     negative_file_list.append(file_name)
-        # random.shuffle(file_name_list)
         random.shuffle(positive_file_list)
         random.shuffle(negative_file_list)
-        # num_of_file = len(file_name_list)
         bank_of_file_list = list()
-        # bank_of_file_list = [file_name_list[i : i + num_of_file / 10] for i in range(num_of_file / 10) ]
-        positive_batch_size = len(positive_file_list) / 10
-        negative_batch_size = len(negative_file_list) / 10
+        batch_general = min(len(positive_file_list), len(negative_file_list))
+        positive_batch_size = batch_general / 10
+        negative_batch_size = batch_general / 10
         for i in range(10):
             bank_of_file_list.append(positive_file_list[i * positive_batch_size : i * positive_batch_size + positive_batch_size] + negative_file_list[i * negative_batch_size : i * negative_batch_size + negative_batch_size])
         for index in range(10):
@@ -149,42 +219,22 @@ class Bayes_Classifier:
                 if index_train != index:
                     training_file += bank_of_file_list[index_train]
             testing_file = bank_of_file_list[index]
-            count, word_list, positive_hash, negative_hash = self.training_file_list(training_file)
-            self.evaluate(testing_file, count, word_list, positive_hash, negative_hash, index)
+            count, word_list, positive_hash, negative_hash, positive_word_frquency, negative_word_frequency = self.count_n_gram_frequency(training_file)
+            positive_bigram, negative_bigram, bigram_list, positive_bigram_frequency, negative_bigram_frequency = self.count_bigram_frequency(training_file)
+            self.evaluate(testing_file, count, word_list, positive_hash, negative_hash, index, positive_word_frquency, negative_word_frequency, bigram_list, positive_bigram, negative_bigram, positive_bigram_frequency, negative_bigram_frequency)
+        return
 
-    def training_file_list(self, file_list):
-        count = [0, 0]
-        word_list = list()
-        positive_hash = dict()
-        negative_hash = dict()
-        for file_name in file_list:
-            if file_name[:5] == 'movie':
-                raw_text = self.loadFile('movies_reviews/' + file_name)
-                token_list = self.tokenize(raw_text)
-                if file_name[7] == '5':
-                    count[0] += 1
-                    for token in token_list:
-                        if token not in word_list:
-                            word_list.append(token)
-                        positive_hash[token.lower()] = positive_hash.get(token.lower(), 0) + 1
-                else:
-                    count[1] += 1
-                    for token in token_list:
-                        if token not in word_list:
-                            word_list.append(token)
-                        negative_hash[token.lower()] = negative_hash.get(token.lower(), 0) + 1
-        total_word_num = len(word_list)
-        for key in positive_hash:
-            positive_hash[key] = (float(positive_hash[key]) + float(1)) / (float(float(positive_hash[key]) + float(negative_hash.get(key, 0))) + float(total_word_num))
-        for key in negative_hash:
-            negative_hash[key] = (float(negative_hash[key]) + float(1)) / (float(float(negative_hash[key]) + float(positive_hash.get(key, 0))) + float(total_word_num))
-        return count, word_list, positive_hash, negative_hash
+    def evaluate(self, testing_file_list, count, word_list, positive_hash, negative_hash, index, positive_word_frquency, negative_word_frequency, bigram_list, positive_bigram, negative_bigram, positive_bigram_frequency, negative_bigram_frequency):
+        '''
+        Use the result of the training model with the 9/10 of the data,
+        calculate the precision, recall, f1 score with the remaining 1/10 of data based on the score of the previous training
 
-
-    def evaluate(self, testing_file_list, count, word_list, positive_hash, negative_hash, index):
+        Record and write the result of each step to JSON file
+        '''
         positive_right_num, negative_right_num = 0, 0
         positive_wrong_num, negative_wrong_num = 0, 0
         positive_num, negative_num = 0, 0
+        num_of_bigram = len(bigram_list)
         for test_file in testing_file_list:
             if test_file[:5] == 'movie':
                 raw_text = self.loadFile('movies_reviews/' + test_file)
@@ -197,32 +247,42 @@ class Bayes_Classifier:
                     if positive_hash.get(word):
                         p_positive += math.log(positive_hash.get(word))
                     else:
-                        p_positive += math.log(float(1) / float(num_of_word))
+                        p_positive += math.log(float(1) / (float(positive_word_frquency) + float(num_of_word)))
                     if negative_hash.get(word):
                         p_negative += math.log(negative_hash.get(word))
                     else:
-                        p_negative += math.log(float(1) / float(num_of_word))
-                if p_positive > p_negative:
+                        p_negative += math.log(float(1) / (float(negative_word_frequency) + float(num_of_word)))
+                bigram_of_input = self.token_list_to_bigram_list(input_token)
+                for bigram in bigram_of_input:
+                    if positive_bigram.get(bigram):
+                        p_positive += math.log(positive_bigram.get(bigram))
+                    else:
+                        p_positive += math.log(float(1) / (float(num_of_bigram) + float(positive_bigram_frequency)))
+                    if negative_bigram.get(bigram):
+                        p_negative += math.log(negative_bigram.get(bigram))
+                    else:
+                        p_negative += math.log(float(1) / (float(num_of_bigram) + float(negative_bigram_frequency)))
+                threshold = float(0.001)
+                if abs(float(p_positive) - float(p_negative)) < threshold:
                     if test_file[7] == '5':
                         positive_num += 1
-                        positive_right_num += 1
                     else:
                         negative_num += 1
-                        positive_wrong_num += 1
-                elif p_positive < p_negative:
-                    if test_file[7] == '5':
-                        positive_num += 1
-                        negative_wrong_num += 1
-                    else:
-                        negative_num += 1
-                        negative_right_num += 1
                 else:
-                    if test_file[7] == '5':
-                        positive_num += 1
+                    if p_positive > p_negative:
+                        if test_file[7] == '5':
+                            positive_num += 1
+                            positive_right_num += 1
+                        else:
+                            negative_num += 1
+                            positive_wrong_num += 1
                     else:
-                        negative_num += 1
-        print len(testing_file_list)
-        print positive_right_num, positive_wrong_num, negative_right_num, negative_wrong_num, positive_num, negative_num
+                        if test_file[7] == '5':
+                            positive_num += 1
+                            negative_wrong_num += 1
+                        else:
+                            negative_num += 1
+                            negative_right_num += 1
         num_list = len(testing_file_list)
         positive_precision = self.calculate_divide(positive_right_num, positive_right_num + positive_wrong_num)
         positive_recall = self.calculate_divide(positive_right_num, positive_num)
@@ -244,20 +304,34 @@ class Bayes_Classifier:
         result['negative_f1'] = negative_f1
         result['print positive_right_num, positive_wrong_num, negative_right_num, negative_wrong_num, positive_num, negative_num'] = [positive_right_num, positive_wrong_num, negative_right_num, negative_wrong_num, positive_num, negative_num]
         self.save_evaluation(result, str(index) + '_best_evalution.json')
-        # pass
-        # accuracy = float(positive_right_num + negative_right_num) / float(num_list)
-        # recall =
+        return
+
     def save_evaluation(self, evaluation_obj, file_name):
+        '''
+        Save the result of each step of Cross validation to JSON
+        '''
         with open(file_name, 'wb') as f_out:
-            f_out.write(json.dumps(file_name))
+            f_out.write(json.dumps(evaluation_obj))
 
     def calculate_f1(self, precision, recall):
-        if recall == 0:
+        '''
+        calculate The F1 score
+
+        INPUT:
+            precision(float)
+            recall(float)
+        Output:
+            float
+        '''
+        if recall == 0 and precision == 0:
             return 0
         else:
             return float(precision) * float(recall) * 2 / float(float(precision) + float(recall))
 
     def calculate_divide(self, divide1, divide2):
+        '''
+        Calculate the dividing result of 2 float number
+        '''
         if divide2 != 0:
             return float(divide1) / float(divide2)
         else:
@@ -266,42 +340,52 @@ class Bayes_Classifier:
     def classify(self, sText):
         """Given a target string sText, this function returns the most likely document
         class to which the target string belongs (i.e., positive, negative or neutral).
+
+        Count the n-gram and bi-gram features.
+
+        Bigram are represented with list of tuple.
+
+        If the absolute value of the positive Possibility and negative Possibility is less than 0.001,
+        classify the document to be neural
+
+        Else, choose the one with bigger possibility
+
+        Ignore the possibility of the documents due to there are much more positive training docs than
+        negative docs in the training data set.
         """
         input_token = self.tokenize(sText)
         num_of_data = sum(self.count)
         num_of_word = len(self.word_list)
         num_of_bigram = len(self.bigram_count_list)
-        p_positive, p_negative = math.log(float(self.count[0]) / float(num_of_data)), math.log(float(self.count[1]) / float(num_of_data))
-        # print self.count[0], self.count[1]
-        # print num_of_data
-        # p_positive, p_negative = math.log(float(self.count[0]) / float(num_of_data)), 0
+        p_positive, p_negative = 0, 0
         for word_token in input_token:
             word = word_token.lower()
             if self.positive_hash.get(word):
                 p_positive += math.log(self.positive_hash.get(word))
             else:
-                p_positive += math.log(float(1) / float(num_of_word) + float(self.positive_negative_word_frequency[0]))
+                p_positive += math.log(float(1) / (float(num_of_word) + float(self.positive_negative_word_frequency[0])))
             if self.negative_hash.get(word):
                 p_negative += math.log(self.negative_hash.get(word))
             else:
-                p_negative += math.log(float(1) / float(num_of_word) + float(self.positive_negative_word_frequency[1]))
-
+                p_negative += math.log(float(1) / (float(num_of_word) + float(self.positive_negative_word_frequency[1])))
         bigram_of_input = self.token_list_to_bigram_list(input_token)
         for bigram in bigram_of_input:
             if self.positive_bigram_training.get(bigram):
                 p_positive += math.log(self.positive_bigram_training.get(bigram))
             else:
-                p_positive += math.log(float(1) / float(num_of_bigram) + float(self.positive_negative_bigram_frequency[0]))
+                p_positive += math.log(float(1) / (float(num_of_bigram) + float(self.positive_negative_bigram_frequency[0])))
             if self.negative_bigram_training.get(bigram):
                 p_negative += math.log(self.negative_bigram_training.get(bigram))
             else:
-                p_negative += math.log(float(1) / float(num_of_bigram) + float(self.positive_negative_bigram_frequency[1]))
-        if p_positive > p_negative:
-            return 'Positive'
-        elif p_positive < p_negative:
-            return 'Negative'
-        else:
+                p_negative += math.log(float(1) / (float(num_of_bigram) + float(self.positive_negative_bigram_frequency[1])))
+        threshold = float(0.001)
+        if abs(float(p_positive) - float(p_negative)) < threshold:
             return 'Neural'
+        else:
+            if p_positive > p_negative:
+                return 'Positive'
+            else:
+                return 'Negative'
 
     def loadFile(self, sFilename):
         """Given a file name, return the contents of the file as a string."""
@@ -354,8 +438,8 @@ class Bayes_Classifier:
             lTokens.append(sToken)
         return lTokens
 
-if __name__ == '__main__':
-    test_obj = Bayes_Classifier()
-    print test_obj.classify('I Love AI class')
-    # test_obj.cross_validation()
-    # positive_set, negative_set = test_obj.train()
+# if __name__ == '__main__':
+#     test_obj = Bayes_Classifier()
+#     print test_obj.classify('I Love AI class')
+#     test_obj.cross_validation()
+#     # positive_set, negative_set = test_obj.train()
