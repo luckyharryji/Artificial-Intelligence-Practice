@@ -14,14 +14,20 @@ class Bayes_Classifier:
         cache of a trained classifier has been stored, it loads this cache.  Otherwise,
         the system will proceed through training.  After running this method, the classifier
         is ready to classify input text."""
-        self.positive_hash = dict()
-        self.negative_hash = dict()
-        self.word_list = list()
-        self.count = [0, 0]
-        self.positive_negative_word_frequency = list()
-        self.try_load_pickle()
+        self.positive_hash = dict() # the count of the word pobability in Positive Training set
+        self.negative_hash = dict() # the count of the word pobability in Negative Training set
+        self.word_list = list() # record the word that have occurred in the data set
+        self.count = [0, 0] # count[0]: number of positive trainig set, count[1]: number of negative training set
+        self.positive_negative_word_frequency = list() # number of word that appear in the positive/negative training set seperately
+        self.try_load_pickle() # Try to load the data from disk
 
     def try_load_pickle(self):
+        '''
+        Try to load the required data for classify from the disk
+
+        If the data dose not exist in the disk or no training conducted before,
+        training again with the given dataset
+        '''
         try:
             self.positive_hash = self.load('positive_word_count')
             self.negative_hash = self.load('negative_word_count')
@@ -32,7 +38,16 @@ class Bayes_Classifier:
             self.positive_hash, self.negative_hash = self.train()
 
     def train(self):
-        """Trains the Naive Bayes Sentiment Classifier."""
+        """Trains the Naive Bayes Sentiment Classifier.
+
+        After training, the model will be saved to the disk
+        Data to save:
+        self.positive_hash: dict(key: str; value: float): The posibility of each word in the positive training dataset
+        self.negative_hash: dict(key: str; value: float): The posibility of each word in the negative training dataset
+        self.positive_negative_word_frequency: list(int): including 2 elements, recording the number of word appear in the positive negative training set
+        self.count: list(int): including 2 elements, recording how many positive/negative docs are in the system
+        self.word_list: list(str): record the vocabulary list of the training data set
+        """
         file_name_list = list()
         for file_obj in os.walk('movies_reviews/'):
             file_name_list = file_obj[2]
@@ -46,11 +61,25 @@ class Bayes_Classifier:
         return self.positive_hash, self.negative_hash
 
     def count_n_gram_frequency(self, file_list):
+        '''
+        Extract the n-gram feature fromt the given_files
+
+        Possibility of word have been add one smoothed
+
+        Input:
+            file_list( list(str) ): list of file_name for feature extracture
+        Output:
+            count ( list(int) ): number of positive/negative docs seperately
+            word_list ( list(str) ): words appear in the docs set
+            positive_hash, negative_hash ( dict(key: str) ): Possibility of words in the positive/negative seperately
+            positive_frequency, negative_frequency ( int ): number of words appear in the positive/negative set seperately
+        '''
         count = [0, 0]
         word_list = list()
         positive_hash = dict()
         negative_hash = dict()
         positive_frequency, negative_frequency = 0, 0
+        # first count the frequency of the word in the data set
         for file_name in file_list:
             if file_name[:5] == 'movie':
                 raw_text = self.loadFile('movies_reviews/' + file_name)
@@ -70,6 +99,7 @@ class Bayes_Classifier:
                         negative_hash[token.lower()] = negative_hash.get(token.lower(), 0) + 1
                         negative_frequency += 1
         total_word_num = len(word_list)
+        # add one smoothing for each word
         for key in positive_hash:
             positive_hash[key] = (float(positive_hash[key]) + float(1)) / (float(positive_frequency) + float(total_word_num))
         for key in negative_hash:
@@ -79,6 +109,14 @@ class Bayes_Classifier:
     def cross_validation(self):
         '''
         Perform Cross Validation with the Naive Bayes
+
+        Choose the same number of positive/negative data sets for the valuation.
+        Shuffle and then split the data in to equally number of 10 parts, guarantee
+        equal number of positive/negative docs in each set.
+
+        Use one as testing set and the remaining 9 as training set.
+        For each of the 10 iteration, calculate and compare precision, recall, f1.
+
         '''
         file_name_list = list()
         for file_obj in os.walk('movies_reviews/'):
@@ -91,11 +129,11 @@ class Bayes_Classifier:
                     positive_file_list.append(file_name)
                 else:
                     negative_file_list.append(file_name)
+        # shuffle the data
         random.shuffle(positive_file_list)
         random.shuffle(negative_file_list)
         bank_of_file_list = list()
-        # positive_batch_size = len(positive_file_list) / 10
-        # negative_batch_size = len(negative_file_list) / 10
+        # Choose equal number of +/- data for valuation
         batch_general = min(len(positive_file_list), len(negative_file_list))
         positive_batch_size = batch_general / 10
         negative_batch_size = batch_general / 10
@@ -107,11 +145,19 @@ class Bayes_Classifier:
                 if index_train != index:
                     training_file += bank_of_file_list[index_train]
             testing_file = bank_of_file_list[index]
+            # use 9/10 parts of the data for training and the remaining 1/10 for testing
             count, word_list, positive_hash, negative_hash, positive_word_frquency, negative_word_frequency = self.count_n_gram_frequency(training_file)
             self.evaluate(testing_file, count, word_list, positive_hash, negative_hash, index, positive_word_frquency, negative_word_frequency)
         return
 
+
     def evaluate(self, testing_file_list, count, word_list, positive_hash, negative_hash, index, positive_word_frquency, negative_word_frequency):
+        '''
+        Use the result of the training model with the 9/10 of the data,
+        calculate the precision, recall, f1 score with the remaining 1/10 of data based on the score of the previous training
+
+        Record and write the result of each step to JSON file
+        '''
         positive_right_num, negative_right_num = 0, 0
         positive_wrong_num, negative_wrong_num = 0, 0
         positive_num, negative_num = 0, 0
@@ -121,7 +167,6 @@ class Bayes_Classifier:
                 input_token = self.tokenize(raw_text)
                 num_of_data = sum(count)
                 num_of_word = len(word_list)
-                # p_positive, p_negative = math.log(float(count[0]) / float(num_of_data)), math.log(float(count[1]) / float(num_of_data))
                 p_positive, p_negative = 0, 0
                 for word_token in input_token:
                     word = word_token.lower()
@@ -152,8 +197,6 @@ class Bayes_Classifier:
                         positive_num += 1
                     else:
                         negative_num += 1
-        print len(testing_file_list)
-        print positive_right_num, positive_wrong_num, negative_right_num, negative_wrong_num, positive_num, negative_num
         num_list = len(testing_file_list)
         positive_precision = self.calculate_divide(positive_right_num, positive_right_num + positive_wrong_num)
         positive_recall = self.calculate_divide(positive_right_num, positive_num)
@@ -173,21 +216,36 @@ class Bayes_Classifier:
         result['negative_precision'] = negative_precision
         result['negative_recall'] = negative_recall
         result['negative_f1'] = negative_f1
-        result['print positive_right_num, positive_wrong_num, negative_right_num, negative_wrong_num, positive_num, negative_num'] = [positive_right_num, positive_wrong_num, negative_right_num, negative_wrong_num, positive_num, negative_num]
+        result['positive_right_num, positive_wrong_num, negative_right_num, negative_wrong_num, positive_num, negative_num'] = [positive_right_num, positive_wrong_num, negative_right_num, negative_wrong_num, positive_num, negative_num]
         self.save_evaluation(result, str(index) + '_evalution.json')
         return
 
     def save_evaluation(self, evaluation_obj, file_name):
+        '''
+        Save the result of each step of Cross validation to JSON
+        '''
         with open(file_name, 'wb') as f_out:
             f_out.write(json.dumps(evaluation_obj))
 
     def calculate_f1(self, precision, recall):
+        '''
+        calculate The F1 score
+
+        INPUT:
+            precision(float)
+            recall(float)
+        Output:
+            float
+        '''
         if recall == 0 and precision == 0:
             return 0
         else:
             return float(precision) * float(recall) * 2 / float(float(precision) + float(recall))
 
     def calculate_divide(self, divide1, divide2):
+        '''
+        Calculate the dividing result of 2 float number
+        '''
         if divide2 != 0:
             return float(divide1) / float(divide2)
         else:
@@ -196,6 +254,14 @@ class Bayes_Classifier:
     def classify(self, sText):
         """Given a target string sText, this function returns the most likely document
         class to which the target string belongs (i.e., positive, negative or neutral).
+
+        If the absolute value of the positive Possibility and negative Possibility is less than 0.001,
+        classify the document to be neural
+
+        Else, choose the one with bigger possibility
+
+        Ignore the possibility of the documents due to there are much more positive training docs than
+        negative docs in the training data set.
         """
         input_token = self.tokenize(sText)
         num_of_data = sum(self.count)
@@ -264,10 +330,8 @@ class Bayes_Classifier:
         if sToken != "":
             lTokens.append(sToken)
         return lTokens
-
-if __name__ == '__main__':
-    test_obj = Bayes_Classifier()
-    # test_obj.count_num()
-    print test_obj.classify('I Love AI class')
-    test_obj.cross_validation()
-    # positive_set, negative_set = test_obj.train()
+# 
+# if __name__ == '__main__':
+#     test_obj = Bayes_Classifier()
+#     print test_obj.classify('I Love AI class')
+#     test_obj.cross_validation()

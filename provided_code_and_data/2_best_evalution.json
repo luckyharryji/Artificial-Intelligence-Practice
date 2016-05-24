@@ -1,0 +1,1 @@
+{"positive_precision": 0.9250936329588015, "negative_precision": 0.9068100358422939, "positive_f1": 0.9148148148148149, "negative_recall": 0.9267399267399268, "negative_f1": 0.9166666666666666, "print positive_right_num, positive_wrong_num, negative_right_num, negative_wrong_num, positive_num, negative_num": [247, 20, 253, 26, 273, 273], "positive_recall": 0.9047619047619048}
