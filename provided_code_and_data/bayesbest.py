@@ -1,8 +1,9 @@
-# Name:
-# Date:
-# Description:
-#
-#
+'''
+Xiangyu Ji - xjq158
+Chong Yan - cyu422
+Lin Jiang - ljh235
+All group members were present and contributing during all work on this project.
+'''
 
 import math, os, pickle, re
 import random

@@ -1,8 +1,9 @@
-# Name:
-# Date:
-# Description:
-#
-#
+'''
+Xiangyu Ji - xjq158
+Chong Yan - cyu422
+Lin Jiang - ljh235
+All group members were present and contributing during all work on this project.
+'''
 
 import math, os, pickle, re
 import random
@@ -330,8 +331,8 @@ class Bayes_Classifier:
         if sToken != "":
             lTokens.append(sToken)
         return lTokens
-#
-# if __name__ == '__main__':
-#     test_obj = Bayes_Classifier()
-#     print test_obj.classify('I Love AI class')
-#     test_obj.cross_validation()
+
+if __name__ == '__main__':
+    test_obj = Bayes_Classifier()
+    print test_obj.classify('I Love AI class')
+    test_obj.cross_validation()
