@@ -1,9 +1,22 @@
+# Author(s) names AND netid's:
+# -----------------------
+# |    name    |  Netid |
+# -----------------------
+# | Xiangyu Ji |  xjq158|     |
+# -----------------------
+# |  Chong Yan | cyu422 |
+# -----------------------
+# |  Lin Jiang | ljh235 |
+# -----------------------
+# Group work statement: <All group members were present and contributing during all work on this project.>
+
 import xml.dom.minidom
 import copy
 import guid
 import math
 import os
 from copy import *
+from random import *
 
 # A couple contants
 CONTINUOUS = 0
@@ -130,7 +143,7 @@ class HMM:
         ''' Find the most likely labels for the sequence of data
             This is an implementation of the Viterbi algorithm  '''
         # You will implement this function
-        print "label function not yet implemented"
+        # print "label function not yet implemented"
         result_label_list = list()
 
         length_of_evidence = len(data)
@@ -327,12 +340,41 @@ class StrokeLabeler:
         ''' Label the strokes in the file strokeFile and save the labels
             (with the strokes) in the outFile '''
         print "Labeling file", strokeFile
-        _strokes, trueLabels = self.loadLabeledFile(strokeFile)
         strokes = self.loadStrokeFile(strokeFile)
         labels = self.labelStrokes(strokes)
-        print "Confusion matrix:", self.confusion(trueLabels, labels)
         print "Labeling done, saving file as", outFile
         self.saveFile(strokes, labels, strokeFile, outFile)
+
+    def labelFile_with_Confusion_Matrix( self, testingDir):
+        '''
+        Get the general confusion matrix for the chosen file list, use for test
+
+        Input:
+            Folder name(string) containing the testing files
+
+        Output:
+            confusion matrix printed
+        '''
+        for fFileObj in os.walk(testingDir):
+            lFileList = fFileObj[2]
+            break
+        goodList = []
+        for x in lFileList:
+            if not x.startswith('.'):
+                goodList.append(x)
+
+        tFiles = [ testingDir + "/" + f for f in goodList ]
+        shuffle(tFiles)
+        print "Testing with file list: "
+        trueLabel_list = list()
+        label_list = list()
+        for strokeFile in tFiles:
+            strokes, trueLabels = self.loadLabeledFile(strokeFile)
+            labels = self.labelStrokes(strokes)
+            for index in range(len(labels)):
+                trueLabel_list.append(trueLabels[index])
+                label_list.append(labels[index])
+        print "Confusion matrix:", self.confusion(trueLabel_list, label_list)
 
     def labelStrokes( self, strokes ):
         ''' return a list of labels for the given list of strokes '''
@@ -618,29 +660,23 @@ class Stroke:
 #     '''
 #     Part 1 Viterbi Testing Example
 #     '''
-#     states = ['Sunny', 'Cloudy', 'Rainy']
-#     features = ["H"]
-#     contOrDisc = {"H": DISCRETE}
-#     numVals = { 'Dry': 2, 'Damp': 2, 'Soggy': 2}
-#     hmm = HMM(states, features, contOrDisc, numVals)
-#     hmm.isTrained = True
-#     # features = {"Dry": ,"Dryish": ,"Damp": ,"Soggy": }
-#     hmm.priors = {"S": 0.63, "C": 0.17, "R":0.20}
-#     hmm.emissions = {
-#         "S": {"H": [0.60, 0.20, 0.15, 0.05]},
-#         "C": {"H": [0.25, 0.25, 0.25, 0.25]},
-#         "R": {"H": [0.05, 0.10, 0.35, 0.50]}
+#     states = ["Sunny", "Cloudy", "Rainy"]
+#     features = {"Dry", "Dryish", "Damp", "Soggy"}
+#     contOrDisc = {"Dry": DISCRETE,"Dryish": DISCRETE,"Damp": DISCRETE,"Soggy": DISCRETE}
+#     numVals = {"Dry": 2,"Dryish": 2,"Damp": 2,"Soggy": 2}
+#     hmm_model = HMM(states, features, contOrDisc, numVals)
+#     hmm_model.priors = {'Sunny': 0.63, 'Cloudy': 0.17, 'Rainy': 0.20}
+#     hmm_model.emissions = {
+#         'Sunny': {'Dry': [0.40, 0.60], 'Damp': [0.85, 0.15], 'Soggy': [0.95, 0.05]},
+#         'Cloudy': {'Dry': [0.75, 0.25], 'Damp': [0.75, 0.25], 'Soggy': [0.75, 0.25]},
+#         'Rainy': {'Dry': [0.95, 0.05], 'Damp': [0.65, 0.35], 'Soggy': [0.50, 0.50]}
 #     }
-#     hmm.transitions = {
-#         "S": {"S": 0.500, "C": 0.250, "R":0.250},
-#         "C": {"S": 0.375, "C": 0.125, "R":0.375},
-#         "R": {"S": 0.125, "C": 0.675, "R":0.375}
+#     hmm_model.transitions ={
+#         'Sunny': {'Sunny': 0.50, 'Cloudy': 0.25, 'Rainy': 0.25},
+#         'Cloudy': {'Sunny': 0.375, 'Cloudy': 0.125, 'Rainy': 0.375},
+#         'Rainy': {'Sunny': 0.125, 'Cloudy': 0.675, 'Rainy': 0.375}
 #     }
-#     data = [
-#         {"H": 0},
-#         {"H": 2},
-#         {"H": 3}
-#     ]
-#     print hmm.label(data)
-
+#     evidence_data = [{'Dry': 1}, {'Damp': 1}, {'Soggy': 1}]
+#     print hmm_model.label(evidence_data)
+# test_with_Viterbi()
     # You can (and should) define more features here

@@ -1,9 +1,22 @@
+# Author(s) names AND netid's:
+# -----------------------
+# |    name    |  Netid |
+# -----------------------
+# | Xiangyu Ji |  xjq158|     |
+# -----------------------
+# |  Chong Yan | cyu422 |
+# -----------------------
+# |  Lin Jiang | ljh235 |
+# -----------------------
+# Group work statement: <All group members were present and contributing during all work on this project.>
+
 import xml.dom.minidom
 import copy
 import guid
 import math
 import os
 from copy import *
+from random import *
 
 # A couple contants
 CONTINUOUS = 0
@@ -128,20 +141,30 @@ class HMM:
 
     def label( self, data ):
         ''' Find the most likely labels for the sequence of data
-            This is an implementation of the Viterbi algorithm  '''
+            This is an implementation of the Viterbi algorithm
+
+        temp_pratial_probablity (dict) is used to store the probability result
+        in the previous time stamp
+
+        Each time create a new temp dictionary, after choose the maximux
+        possibility state and store into result, transmit the deepcopy to
+        store in temp_pratial_probablity used for calculation in next time stamp
+        '''
         # You will implement this function
         # print "label function not yet implemented"
         result_label_list = list()
 
         length_of_evidence = len(data)
         temp_pratial_probablity = dict()
-        ## first count the partial probability in the time 1, conditional independent assumption
+
+        ## first strp: count the partial probability in the time 1, conditional independent assumption
         for state in self.states:
             probability = self.priors[state] * self.getEmissionProb(state, data[0])
             temp_pratial_probablity[state] = probability
         count_max_prob = -1
         temp_state = ''
         for state in temp_pratial_probablity:
+            # choose the maximux likelyhood value
             if temp_pratial_probablity[state] > count_max_prob:
                 count_max_prob = temp_pratial_probablity[state]
                 temp_state = state
@@ -218,9 +241,9 @@ class StrokeLabeler:
         #    each discrete feature
 
         # add 3 continus feature here
-        self.featureNames = ['length', 'curvature', 'bounding_box_area', 'bounding_box_ratio']
-        self.contOrDisc = {'length': DISCRETE, 'curvature': CONTINUOUS, 'bounding_box_area': CONTINUOUS, 'bounding_box_ratio': CONTINUOUS}
-        self.numFVals = { 'length': 2}
+        self.featureNames = ['length', 'curvature', 'bounding_box_area', 'bounding_box_ratio', 'larger_axis']
+        self.contOrDisc = {'length': DISCRETE, 'curvature': CONTINUOUS, 'bounding_box_area': CONTINUOUS, 'bounding_box_ratio': CONTINUOUS, 'larger_axis': DISCRETE}
+        self.numFVals = { 'length': 2, 'larger_axis': 2}
 
     def confusion(self, trueLabels, classifications):
         '''
@@ -282,6 +305,11 @@ class StrokeLabeler:
             d['curvature'] = s.sumOfCurvature()
             d['bounding_box_area'] = s.area_of_points()
             d['bounding_box_ratio'] = s.bounding_box_ratio()
+
+            ## add 1 discrete feature
+            ## if area range in y > x, return 1, else 0
+            d['larger_axis'] = s.larger_range()
+
             # We can add more features here just by adding them to the dictionary
             # d as we did with length.  Remember that when you add features,
             # you also need to add them to the three member data structures
@@ -333,12 +361,42 @@ class StrokeLabeler:
         ''' Label the strokes in the file strokeFile and save the labels
             (with the strokes) in the outFile '''
         print "Labeling file", strokeFile
-        _strokes, trueLabels = self.loadLabeledFile(strokeFile)
         strokes = self.loadStrokeFile(strokeFile)
         labels = self.labelStrokes(strokes)
-        print "Confusion matrix:", self.confusion(trueLabels, labels)
         print "Labeling done, saving file as", outFile
         self.saveFile(strokes, labels, strokeFile, outFile)
+
+
+    def labelFile_with_Confusion_Matrix(self, testingDir):
+        '''
+        Get the general confusion matrix for the chosen file list, use for test
+
+        Input:
+            Folder name(string) containing the testing files
+
+        Output:
+            confusion matrix printed
+        '''
+        for fFileObj in os.walk(testingDir):
+            lFileList = fFileObj[2]
+            break
+        goodList = []
+        for x in lFileList:
+            if not x.startswith('.'):
+                goodList.append(x)
+
+        tFiles = [ testingDir + "/" + f for f in goodList ]
+        shuffle(tFiles)
+        print "Testing with file list: "
+        trueLabel_list = list()
+        label_list = list()
+        for strokeFile in tFiles:
+            strokes, trueLabels = self.loadLabeledFile(strokeFile)
+            labels = self.labelStrokes(strokes)
+            for index in range(len(labels)):
+                trueLabel_list.append(trueLabels[index])
+                label_list.append(labels[index])
+        print "Confusion matrix:", self.confusion(trueLabel_list, label_list)
 
     def labelStrokes( self, strokes ):
         ''' return a list of labels for the given list of strokes '''
@@ -620,36 +678,22 @@ class Stroke:
 
         return ret / len(self.points)
 
-# def test_with_Viterbi():
-#     '''
-#     Part 1 Viterbi Testing Example
-#     '''
-#     states = ['Sunny', 'Cloudy', 'Rainy']
-#     features = ["H"]
-#     contOrDisc = {"H": DISCRETE}
-#     numVals = { 'Dry': 2, 'Damp': 2, 'Soggy': 2}
-#     hmm = HMM(states, features, contOrDisc, numVals)
-#     hmm.isTrained = True
-#     # features = {"Dry": ,"Dryish": ,"Damp": ,"Soggy": }
-#     hmm.priors = {"S": 0.63, "C": 0.17, "R":0.20}
-#     hmm.emissions = {
-#         "S": {"H": [0.60, 0.20, 0.15, 0.05]},
-#         "C": {"H": [0.25, 0.25, 0.25, 0.25]},
-#         "R": {"H": [0.05, 0.10, 0.35, 0.50]}
-#     }
-#     hmm.transitions = {
-#         "S": {"S": 0.500, "C": 0.250, "R":0.250},
-#         "C": {"S": 0.375, "C": 0.125, "R":0.375},
-#         "R": {"S": 0.125, "C": 0.675, "R":0.375}
-#     }
-#     data = [
-#         {"H": 0},
-#         {"H": 2},
-#         {"H": 3}
-#     ]
-#     print hmm.label(data)
-
     # You can (and should) define more features here
+    def larger_range(self):
+        '''
+        Feature: which axis or direction has larger range
+            1: y_axis
+            0: x_axis
+        '''
+        left_margin_point = min(self.points, key = lambda x: x[0])
+        right_margin_point = max(self.points, key = lambda x: x[0])
+        top_margin_point = max(self.points, key = lambda x: x[1])
+        bottom_margin_point = min(self.points, key = lambda x: x[1])
+        if (abs(top_margin_point[1] - bottom_margin_point[1]) > abs(right_margin_point[0] - left_margin_point[0])):
+            return 1
+        else:
+            return 0
+
     def area_of_points(self):
         '''
         Feature: area of square containing the stroke points
@@ -658,7 +702,7 @@ class Stroke:
         right_margin_point = max(self.points, key = lambda x: x[0])
         top_margin_point = max(self.points, key = lambda x: x[1])
         bottom_margin_point = min(self.points, key = lambda x: x[1])
-        return math.sqrt(abs(top_margin_point[1] - bottom_margin_point[1])**2 + abs(right_margin_point[0] - left_margin_point[0])**2)
+        return (abs(top_margin_point[1] - bottom_margin_point[1]) * abs(right_margin_point[0] - left_margin_point[0]))
 
 
     def bounding_box_ratio(self):
@@ -672,3 +716,27 @@ class Stroke:
         if abs(right_margin_point[0] - left_margin_point[0]) == 0:
             return 0
         return float(abs(top_margin_point[1] - bottom_margin_point[1])) / float(abs(right_margin_point[0] - left_margin_point[0]))
+
+# def test_with_Viterbi():
+#     '''
+#     Part 1 Viterbi Testing Example
+#     '''
+#     states = ["Sunny", "Cloudy", "Rainy"]
+#     features = {"Dry", "Dryish", "Damp", "Soggy"}
+#     contOrDisc = {"Dry": DISCRETE,"Dryish": DISCRETE,"Damp": DISCRETE,"Soggy": DISCRETE}
+#     numVals = {"Dry": 2,"Dryish": 2,"Damp": 2,"Soggy": 2}
+#     hmm_model = HMM(states, features, contOrDisc, numVals)
+#     hmm_model.priors = {'Sunny': 0.63, 'Cloudy': 0.17, 'Rainy': 0.20}
+#     hmm_model.emissions = {
+#         'Sunny': {'Dry': [0.40, 0.60], 'Damp': [0.85, 0.15], 'Soggy': [0.95, 0.05]},
+#         'Cloudy': {'Dry': [0.75, 0.25], 'Damp': [0.75, 0.25], 'Soggy': [0.75, 0.25]},
+#         'Rainy': {'Dry': [0.95, 0.05], 'Damp': [0.65, 0.35], 'Soggy': [0.50, 0.50]}
+#     }
+#     hmm_model.transitions ={
+#         'Sunny': {'Sunny': 0.50, 'Cloudy': 0.25, 'Rainy': 0.25},
+#         'Cloudy': {'Sunny': 0.375, 'Cloudy': 0.125, 'Rainy': 0.375},
+#         'Rainy': {'Sunny': 0.125, 'Cloudy': 0.675, 'Rainy': 0.375}
+#     }
+#     evidence_data = [{'Dry': 1}, {'Damp': 1}, {'Soggy': 1}]
+#     print hmm_model.label(evidence_data)
+# test_with_Viterbi()
